@@ -1,0 +1,21 @@
+
+{
+  "manifest_version": 3,
+  "name": "Le Chat Helper Dev",
+  "version": "0.1",
+  "description": "UI enhancements for Mistral Le Chat",
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chat.mistral.ai/chat/*"],
+      "js": ["content/bundle.js"],
+      "css": ["sidebar.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
