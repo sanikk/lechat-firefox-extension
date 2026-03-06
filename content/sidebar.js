@@ -29,6 +29,13 @@ export class Sidebar {
 
         this.prompt_list = document.createElement('div');
         this.sidebar.appendChild(this.prompt_list);
+
+        this.selections_reset_button.onclick = () => {
+            const checkboxes = this.prompt_list.querySelectorAll('input');
+            checkboxes.forEach((cb) => {
+                cb.checked = false;
+            });
+        };
     }
     create_selections_buttons() {
         const buttons_row = document.createElement('div');

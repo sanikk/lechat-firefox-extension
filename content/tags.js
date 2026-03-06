@@ -15,10 +15,8 @@ export async function load_tags(list_available) {
   try {
     list_available.replaceChildren();
     const tags = await browser.runtime.sendMessage({ type: "getTags" });
+    tags.forEach((tag) => optionize_tag(tag, list_available));
 
-    for (const tag of tags) {
-      optionize_tag(tag, list_available);
-    }
   } catch (err) {
     console.error('Failed to load tags:', err);
   }
