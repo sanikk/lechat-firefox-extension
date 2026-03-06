@@ -12,7 +12,8 @@ Select manifest.json to load the extension.
 Currently you have to reload the page after enabling the extension to receive full functionality.
 
 There is also a Python backend prototype to use as local storage. You can find it here:
-TBA
+https://github.com/sanikk/llm-extension-backend
+
 
 There might be other settings I set to enable this, I need to test on a fresh install.
 
