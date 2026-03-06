@@ -13,11 +13,11 @@ export class Sidebar {
 
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'tm-jump-sidebar';
-    
+
         const controls_area = document.createElement('div');
         controls_area.appendChild(this.create_selections_buttons());
         controls_area.appendChild(this.create_tag_area());
-        
+
         this.sidebar.appendChild(controls_area);
 
         const separator = document.createElement('div');
@@ -27,7 +27,7 @@ export class Sidebar {
             </div>`;
         this.sidebar.appendChild(separator);
 
-        this.prompt_list = document.createElement('div'); 
+        this.prompt_list = document.createElement('div');
         this.sidebar.appendChild(this.prompt_list);
     }
     create_selections_buttons() {
@@ -49,17 +49,17 @@ export class Sidebar {
 
         const add_tag_row = document.createElement('div');
 
-        this.input_tag = document.createElement('input');
-        this.input_tag.type = 'text';
-        this.input_tag.placeholder = 'New tag';
-        this.input_tag.maxLength = 64;
-        this.input_tag.id = 'tag-input';
-        this.input_tag.style.backgroundColor = 'darkgray';
+        const input_tag = document.createElement('input');
+        input_tag.type = 'text';
+        input_tag.placeholder = 'New tag';
+        input_tag.maxLength = 64;
+        input_tag.id = 'tag-input';
+        input_tag.style.backgroundColor = 'darkgray';
 
-        this.tag_create_button = document.createElement('button');
-        this.tag_create_button.textContent = 'Create';
-        this.tag_create_button.className = 'tag-button';
-        this.tag_create_button.addEventListener('click', async () => { 
+        const tag_create_button = document.createElement('button');
+        tag_create_button.textContent = 'Create';
+        tag_create_button.className = 'tag-button';
+        tag_create_button.addEventListener('click', async () => {
             const tag = input_tag.value.trim();
             if (!tag) return;
             const ret = await browser.runtime.sendMessage({
@@ -71,13 +71,13 @@ export class Sidebar {
             }
             input_tag.value = '';
         });
-        add_tag_row.append(this.input_tag, this.tag_create_button);
+        add_tag_row.append(input_tag, tag_create_button);
         tag_area.append(add_tag_row);
 
-        const list_available_tags = document.createElement('select');
-        list_available_tags.className = 'tag-list';
-        list_available_tags.multiple = true;
-        tag_area.append(list_available_tags);
+        this.list_available_tags = document.createElement('select');
+        this.list_available_tags.className = 'tag-list';
+        this.list_available_tags.multiple = true;
+        tag_area.append(this.list_available_tags);
 
         const middleButtons = document.createElement('div');
         this.tag_add_button = document.createElement('button');
@@ -88,7 +88,7 @@ export class Sidebar {
         this.tag_remove_button.className = 'tag-button';
         middleButtons.append(this.tag_add_button, this.tag_remove_button);
         tag_area.append(middleButtons);
-        
+
         this.list_picked_tags = document.createElement('select');
         this.list_picked_tags.className = 'tag-list';
         this.list_picked_tags.multiple = true;
