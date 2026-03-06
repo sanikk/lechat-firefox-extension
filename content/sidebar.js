@@ -10,7 +10,6 @@ You may obtain a copy of the License at
 
 export class Sidebar {
     constructor() {
-
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'tm-jump-sidebar';
 
@@ -35,6 +34,9 @@ export class Sidebar {
             checkboxes.forEach((cb) => {
                 cb.checked = false;
             });
+        };
+        this.selections_store_button.onclick = () => {
+
         };
     }
     create_selections_buttons() {
@@ -66,7 +68,7 @@ export class Sidebar {
         const tag_create_button = document.createElement('button');
         tag_create_button.textContent = 'Create';
         tag_create_button.className = 'tag-button';
-        tag_create_button.addEventListener('click', async () => {
+        tag_create_button.onclick = async () => {
             const tag = input_tag.value.trim();
             if (!tag) return;
             const ret = await browser.runtime.sendMessage({
@@ -77,7 +79,7 @@ export class Sidebar {
                 optionize_tag(ret);
             }
             input_tag.value = '';
-        });
+        };
         add_tag_row.append(input_tag, tag_create_button);
         tag_area.append(add_tag_row);
 
@@ -100,6 +102,18 @@ export class Sidebar {
         this.list_picked_tags.className = 'tag-list';
         this.list_picked_tags.multiple = true;
         tag_area.append(this.list_picked_tags);
+        // Button funcs to MOVE tags between lists
+        this.tag_add_button.onclick = () => {
+            Array.from(this.list_available_tags.selectedOptions).forEach((opt) => {
+                this.list_picked_tags.append(opt);
+            });
+        }
+        this.tag_remove_button.onclick = () => {
+            Array.from(this.list_picked_tags.selectedOptions).forEach((opt) => {
+                this.list_available_tags.append(opt);
+            });
+
+        }
         return tag_area;
     }
 }

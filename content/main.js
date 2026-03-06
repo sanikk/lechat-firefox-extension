@@ -27,7 +27,7 @@ import { load_tags } from './tags.js';
         subtree: true
     });
     if ('navigation' in window) {
-        window.navigation.addEventListener("navigate", (event) => {
+        window.navigation.addEventListener("navigate", (/*event*/) => {
             sidebar.prompt_list.replaceChildren();
             seen.length = 0;
         });
