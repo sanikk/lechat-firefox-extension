@@ -36,7 +36,17 @@ export class Sidebar {
             });
         };
         this.selections_store_button.onclick = () => {
+            const tag_ids = [...this.list_picked_tags.querySelectorAll('option')].map(tag => tag.id);
+            console.log('tags: ', tag_ids);
 
+
+            const checkboxes = this.prompt_list.querySelectorAll('input[type="checkbox"]:checked');
+
+            const end_products = Array.from(checkboxes).map(checkbox => {
+                return checkbox?.parentElement?.querySelector('span');
+            });
+
+            console.log(end_products);
         };
     }
     create_selections_buttons() {

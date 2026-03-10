@@ -8,7 +8,7 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 */
 import { Sidebar } from './sidebar.js';
-import { handle_mutations } from './dom_change_handlers.js';
+import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
 import { load_tags } from './tags.js';
 
 (async function() {
@@ -18,9 +18,17 @@ import { load_tags } from './tags.js';
     const seen = [];
     const sidebar = new Sidebar();
     document.body.appendChild(sidebar.sidebar);
-
-    const dom_observer = new MutationObserver((mutations) => {
-        handle_mutations(mutations, seen, sidebar.prompt_list);
+    let handler;
+    const hostname = window.location.hostname;
+    if (hostname.includes("chat.mistral")) {
+        handler = new MistralHandler(seen, sidebar.prompt_list);
+    } else if (hostname.includes("chatgpt.com")) {
+        handler = new ChatGPTHandler(seen, sidebar.prompt_list);
+    } else {
+        console.log("hostname does not match a handler");
+    }
+    const dom_observer = new MutationObserver(async (mutations) => {
+        await handler.handle_mutations(mutations);
     });
     dom_observer.observe(document.documentElement, {
         childList: true,

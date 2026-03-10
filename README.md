@@ -3,6 +3,13 @@ Small helper extension for Firefox. Has a few UI enhancements, working on local 
 
 ### Installation
 Copy this repository.
+
+Added ESBundle to project, so run
+```terminal
+npm install
+npm run build
+```
+This installs esbundle and runs it in the directory to collect the various JS files into bundle.js.
 Enable this extension in your browser by opening
 ```http
 about:debugging#/runtime/this-firefox
