@@ -20,7 +20,7 @@ Currently you have to reload the page after enabling the extension to receive fu
 
 There is also a Python backend prototype to use as local storage. You can find it here:
 https://github.com/sanikk/llm-extension-backend
-
+Ok sidelining this version. Doing IndexedDB for now.
 
 There might be other settings I set to enable this, I need to test on a fresh install.
 
