@@ -7,6 +7,8 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
+import db from './backend_comms.js'
+import { optionize_tag } from './tags.js'
 
 export class Sidebar {
     constructor() {
@@ -81,10 +83,7 @@ export class Sidebar {
         tag_create_button.onclick = async () => {
             const tag = input_tag.value.trim();
             if (!tag) return;
-            const ret = await browser.runtime.sendMessage({
-                type: 'createTag',
-                name: tag
-            });
+            const ret = await db.saveTag(tag);
             if (ret) {
                 optionize_tag(ret);
             }
