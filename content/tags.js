@@ -1,5 +1,15 @@
+/*
+Copyright 2026 Samuli Nikkilä
 
-function optionize_tag(tag, listAvailable) {
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+*/
+import db from './backend_comms.js'
+
+export function optionize_tag(tag, listAvailable) {
   // Makes a tag row into an <option> for <select>
   if (!tag || !listAvailable) return;
   const { id, name } = tag;
@@ -14,7 +24,7 @@ export async function load_tags(list_available) {
   if (!list_available) return;
   try {
     list_available.replaceChildren();
-    const tags = await browser.runtime.sendMessage({ type: "getTags" });
+    const tags = await db.getTags();
     tags.forEach((tag) => optionize_tag(tag, list_available));
 
   } catch (err) {
