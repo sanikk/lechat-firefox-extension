@@ -7,9 +7,8 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
-import { Sidebar } from './sidebar.js';
+import Sidebar from './sidebar.js';
 import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
-import { load_tags } from './tags.js';
 
 (async function() {
 
@@ -47,6 +46,6 @@ import { load_tags } from './tags.js';
             seen.length = 0;
         });
     }
-    await load_tags(sidebar.list_available_tags);
+    await sidebar.load_tags();
 
 })();

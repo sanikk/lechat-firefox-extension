@@ -7,11 +7,10 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
-// import db from './backend_comms.js'
 import db from './db_module.js'
-import { optionize_tag } from './tags.js'
 
-export class Sidebar {
+
+class Sidebar {
     constructor() {
         console.log('creating sidebar');
         this.sidebar = document.createElement('div');
@@ -19,7 +18,7 @@ export class Sidebar {
 
         const controls_area = document.createElement('div');
         controls_area.appendChild(this.create_selections_buttons());
-        controls_area.appendChild(this.create_tag_area());
+        controls_area.appendChild(this.create_tags_area());
 
         this.sidebar.appendChild(controls_area);
 
@@ -33,13 +32,13 @@ export class Sidebar {
         this.prompt_list = document.createElement('div');
         this.sidebar.appendChild(this.prompt_list);
 
-        this.selections_reset_button.onclick = () => {
+        this.reset_button.onclick = () => {
             const checkboxes = this.prompt_list.querySelectorAll('input');
             checkboxes.forEach((cb) => {
                 cb.checked = false;
             });
         };
-        this.selections_store_button.onclick = () => {
+        this.store_button.onclick = () => {
             const tag_ids = [...this.list_picked_tags.querySelectorAll('option')].map(tag => tag.id);
             console.log('tags: ', tag_ids);
 
@@ -51,81 +50,106 @@ export class Sidebar {
             });
 
             console.log(end_products);
+            // saveArticle(topic, content, model_id, tags) {
         };
     }
     create_selections_buttons() {
         const buttons_row = document.createElement('div');
 
-        this.selections_store_button = document.createElement('button');
-        this.selections_store_button.textContent = 'Store';
-        this.selections_store_button.className = 'big-button';
+        this.store_button = document.createElement('button');
+        this.store_button.textContent = 'Store';
+        this.store_button.className = 'big-button';
 
-        this.selections_reset_button = document.createElement('button');
-        this.selections_reset_button.textContent = 'Reset';
-        this.selections_reset_button.className = 'big-button';
-        buttons_row.append(this.selections_store_button, this.selections_reset_button);
+        this.reset_button = document.createElement('button');
+        this.reset_button.textContent = 'Reset';
+        this.reset_button.className = 'big-button';
+        buttons_row.append(this.store_button, this.reset_button);
         return buttons_row;
     }
 
-    create_tag_area() {
-        const tag_area = document.createElement('div');
+    create_tags_area() {
+        const tags_area = document.createElement('div');
 
-        const add_tag_row = document.createElement('div');
+        const tags_add_row = document.createElement('div');
 
-        const input_tag = document.createElement('input');
-        input_tag.type = 'text';
-        input_tag.placeholder = 'New tag';
-        input_tag.maxLength = 64;
-        input_tag.id = 'tag-input';
-        input_tag.style.backgroundColor = 'darkgray';
+        const tags_input = document.createElement('input');
+        tags_input.type = 'text';
+        tags_input.placeholder = 'New tag';
+        tags_input.maxLength = 64;
+        tags_input.id = 'tag-input';
+        tags_input.style.backgroundColor = 'darkgray';
 
-        const tag_create_button = document.createElement('button');
-        tag_create_button.textContent = 'Create';
-        tag_create_button.className = 'tag-button';
-        tag_create_button.onclick = async () => {
-            const tag_name = input_tag.value.trim();
+        const tags_create_button = document.createElement('button');
+        tags_create_button.textContent = 'Create';
+        tags_create_button.className = 'tag-button';
+        tags_create_button.onclick = async () => {
+            const tag_name = tags_input.value.trim();
             if (!tag_name) return;
             const ret = await db.saveTag(tag_name);
             if (ret) {
-                optionize_tag(ret, this.list_available_tags);
+                optionize_tag(ret, this.tags_available_list);
             }
-            input_tag.value = '';
+            tags_input.value = '';
         };
-        add_tag_row.append(input_tag, tag_create_button);
-        tag_area.append(add_tag_row);
+        tags_add_row.append(tags_input, tags_create_button);
+        tags_area.append(tags_add_row);
 
-        this.list_available_tags = document.createElement('select');
-        this.list_available_tags.className = 'tag-list';
-        this.list_available_tags.multiple = true;
-        tag_area.append(this.list_available_tags);
+        this.tags_available_list = document.createElement('select');
+        this.tags_available_list.className = 'tag-list';
+        this.tags_available_list.multiple = true;
+        tags_area.append(this.tags_available_list);
 
         const middleButtons = document.createElement('div');
-        this.tag_add_button = document.createElement('button');
-        this.tag_add_button.textContent = 'Add';
-        this.tag_add_button.className = 'tag-button';
-        this.tag_remove_button = document.createElement('button');
-        this.tag_remove_button.textContent = 'Remove';
-        this.tag_remove_button.className = 'tag-button';
-        middleButtons.append(this.tag_add_button, this.tag_remove_button);
-        tag_area.append(middleButtons);
+        this.tags_add_button = document.createElement('button');
+        this.tags_add_button.textContent = 'Add';
+        this.tags_add_button.className = 'tag-button';
+        this.tags_remove_button = document.createElement('button');
+        this.tags_remove_button.textContent = 'Remove';
+        this.tags_remove_button.className = 'tag-button';
+        middleButtons.append(this.tags_add_button, this.tags_remove_button);
+        tags_area.append(middleButtons);
 
         this.list_picked_tags = document.createElement('select');
         this.list_picked_tags.className = 'tag-list';
         this.list_picked_tags.multiple = true;
-        tag_area.append(this.list_picked_tags);
+        tags_area.append(this.list_picked_tags);
 
         // Button funcs to MOVE tags between lists
-        this.tag_add_button.onclick = () => {
-            Array.from(this.list_available_tags.selectedOptions).forEach((opt) => {
+        this.tags_add_button.onclick = () => {
+            Array.from(this.tags_available_list.selectedOptions).forEach((opt) => {
                 this.list_picked_tags.append(opt);
             });
         }
-        this.tag_remove_button.onclick = () => {
+        this.tags_remove_button.onclick = () => {
             Array.from(this.list_picked_tags.selectedOptions).forEach((opt) => {
-                this.list_available_tags.append(opt);
+                this.tags_available_list.append(opt);
             });
 
         }
-        return tag_area;
+        return tags_area;
+    }
+
+    optionize_tag(tag) {
+        // Makes a tag row into an <option> for <select>
+        if (!tag) return;
+        const { id, name } = tag;
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = name;
+        this.tags_available_list.appendChild(opt);
+    }
+
+    async load_tags() {
+        // Loads tags and puts them in the sidebar tags_available_list
+        try {
+            this.tags_available_list.replaceChildren();
+            const tags = await db.getTags();
+            tags.forEach((tag) => this.optionize_tag(tag));
+
+        } catch (err) {
+            console.error('Failed to load tags:', err);
+        }
     }
 }
+
+export default Sidebar;
