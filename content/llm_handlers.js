@@ -9,6 +9,7 @@ You may obtain a copy of the License at
 */
 
 class BaseHandler {
+  // Abstract base class for handlers.
   seen;
   prompt_list;
   constructor(seen, prompt_list) {
@@ -29,11 +30,13 @@ class BaseHandler {
 };
 
 export class MistralHandler extends BaseHandler {
+  // Handler for Mistral Le Chat webchat at https://chat.mistral.ai/*
   constructor(seen, prompt_list) {
     super(seen, prompt_list);
   }
   itemize(article) {
     // Adds a quicklink to the "prompts" sidebar
+    // TODO: ok i can actually generalize this into the baseclass, mostly.
     const prompt_text = article.innerText.trim();
     if (!prompt_text) return;
 
