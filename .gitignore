@@ -1,2 +1,6 @@
 node_modules
 sketches
+content/bundle.js
+*.ps1
+*.txt
+

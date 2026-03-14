@@ -19,15 +19,22 @@ import { load_tags } from './tags.js';
     const sidebar = new Sidebar();
     document.body.appendChild(sidebar.sidebar);
     let handler;
-    const hostname = window.location.hostname;
-    if (hostname.includes("chat.mistral")) {
-        handler = new MistralHandler(seen, sidebar.prompt_list);
-    } else if (hostname.includes("chatgpt.com")) {
-        handler = new ChatGPTHandler(seen, sidebar.prompt_list);
+    // TODO: check if I can make this into a module, have the handler routines returned from handler_modules
+    if (!handler) {
+        const hostname = window.location.hostname;
+        if (hostname.includes("chat.mistral")) {
+            handler = new MistralHandler(seen, sidebar.prompt_list);
+        } else if (hostname.includes("chatgpt.com")) {
+            handler = new ChatGPTHandler(seen, sidebar.prompt_list);
+        } else {
+            console.log("hostname does not match a handler");
+        }
     } else {
-        console.log("hostname does not match a handler");
+        console.log('prevented new handler');
     }
     const dom_observer = new MutationObserver(async (mutations) => {
+        // TODO: maybe only do a bit less in the different handlers, most here
+        // like for(....) bits.
         await handler.handle_mutations(mutations);
     });
     dom_observer.observe(document.documentElement, {

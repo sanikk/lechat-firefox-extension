@@ -1,18 +1,18 @@
 
 {
   "manifest_version": 3,
-  "name": "Le Chat Helper Dev",
-  "version": "0.1",
-  "description": "UI enhancements for Mistral Le Chat",
+  "name": "LLM-Notes",
+  "version": "0.2",
+  "description": "LLM Notes: Save, organize, and build how-to guides from your LLM chats.",
   "host_permissions": [
     "http://localhost:8000/*"
   ],
-  "background": {
-    "scripts": ["background.js"]
-  },
   "content_scripts": [
     {
-      "matches": ["https://chat.mistral.ai/chat/*"],
+      "matches": [
+        "https://chat.mistral.ai/chat/*",
+        "https://chatgpt.com/*"
+      ],
       "js": ["content/bundle.js"],
       "css": ["sidebar.css"],
       "run_at": "document_idle"

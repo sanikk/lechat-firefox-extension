@@ -7,11 +7,13 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
-import db from './backend_comms.js'
+// import db from './backend_comms.js'
+import db from './db_module.js'
 import { optionize_tag } from './tags.js'
 
 export class Sidebar {
     constructor() {
+        console.log('creating sidebar');
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'tm-jump-sidebar';
 
@@ -81,11 +83,11 @@ export class Sidebar {
         tag_create_button.textContent = 'Create';
         tag_create_button.className = 'tag-button';
         tag_create_button.onclick = async () => {
-            const tag = input_tag.value.trim();
-            if (!tag) return;
-            const ret = await db.saveTag(tag);
+            const tag_name = input_tag.value.trim();
+            if (!tag_name) return;
+            const ret = await db.saveTag(tag_name);
             if (ret) {
-                optionize_tag(ret);
+                optionize_tag(ret, this.list_available_tags);
             }
             input_tag.value = '';
         };
@@ -111,6 +113,7 @@ export class Sidebar {
         this.list_picked_tags.className = 'tag-list';
         this.list_picked_tags.multiple = true;
         tag_area.append(this.list_picked_tags);
+
         // Button funcs to MOVE tags between lists
         this.tag_add_button.onclick = () => {
             Array.from(this.list_available_tags.selectedOptions).forEach((opt) => {

@@ -12,6 +12,7 @@ class BaseHandler {
   seen;
   prompt_list;
   constructor(seen, prompt_list) {
+    console.log('creating handler');
     this.seen = seen;
     this.prompt_list = prompt_list;
   }
@@ -130,10 +131,13 @@ export class ChatGPTHandler extends BaseHandler {
 
   handle_node(node) {
     this.seen.add(node);
-    if (node.getAttribute('data-turn') === 'user') {
+    const role = node.getAttribute('data-turn');
+    if (role === 'user') {
       this.itemize(a);
-    } else if (node.getAttribute('data-turn') === 'assistant') {
+    } else if (role === 'assistant') {
       this.mark_answer_node(node);
+    } else {
+      console.warn("Role was not 'user' or 'assistant'");
     }
   }
 
@@ -141,9 +145,7 @@ export class ChatGPTHandler extends BaseHandler {
     // DOM change handler
     for (const m of mutations) {
       for (const node of m.addedNodes) {
-        if (!(node instanceof HTMLElement)) continue;
-
-        if (this.seen.indexOf(node) !== -1) return;
+        if (!(node instanceof HTMLElement) || this.seen.indexOf(node) !== -1) continue;
 
         if (node.matches?.('article')) {
           this.handle_node(node);

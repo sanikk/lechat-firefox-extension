@@ -7,7 +7,8 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
-import db from './backend_comms.js'
+//import db from './backend_comms.js'
+import db from './db_module.js'
 
 export function optionize_tag(tag, listAvailable) {
   // Makes a tag row into an <option> for <select>
