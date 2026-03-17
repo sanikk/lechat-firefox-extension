@@ -30,8 +30,8 @@ const db = (() => {
         tagsStore.createIndex('name', 'name', { unique: true });
         // Tag (id: int, name: str)
 
-        const modelsStore = db.createObjectStore('models', { keyPath: 'id', autoIncrement: true });
-        modelsStore.createIndex('name', 'name', { unique: true });
+        //const llmStore = db.createObjectStore('llms', { keyPath: 'id', autoIncrement: true });
+        //modelsStore.createIndex('name', 'name', { unique: true });
         // Model (id: int, name: str)
 
         const articlesStore = db.createObjectStore('articles', {
@@ -49,20 +49,22 @@ const db = (() => {
     });
   }
 
-  return {
-    async _init() {
-      try {
-        if (!_db) await _openDB();
-      } catch (error) {
-        console.error('db.init() threw an error: ', error);
-        throw error;
-      }
-    },
+  async function _init() {
+    try {
+      if (!_db) await _openDB();
+    } catch (error) {
+      console.error('db._init() threw an error: ', error);
+      throw error;
+    }
+  }
 
-    async saveArticle(topic, content, model_id, tags) {
+  return {
+
+    async saveArticle(topic, content, tags) {
       // TODO: test this out
+      if (!topic || !content) return;
       try {
-        await this._init();
+        await _init();
 
         const tx = _db.transaction(['articles', 'articles_tags'], 'readwrite');
         const articlesStore = tx.objectStore('articles');
@@ -71,7 +73,6 @@ const db = (() => {
         const article_id = await articlesStore.add({
           topic: topic,
           content: content,
-          model_id: model_id,
           added_on: new Date(),
         });
 
@@ -95,7 +96,7 @@ const db = (() => {
     async getArticlesByTagId(tag_id) {
       // TODO: test this out when the front can support it
       try {
-        await this._init();
+        await _init();
         const article_ids = await _db.getAllFromIndex('articles_tags', 'tag_id', tag_id);
         if (!article_ids || article_ids.length === 0) return [];
         return await _db.getAllFromIndex('articles', 'id', article_ids);
@@ -109,7 +110,7 @@ const db = (() => {
 
     async getTags() {
       try {
-        await this._init();
+        await _init();
         return await _db.getAll('tags');
       } catch (error) {
         console.error('db.getTags threw an error: ', error);
@@ -119,7 +120,8 @@ const db = (() => {
 
     async saveTag(name) {
       try {
-        if (!_db) await _openDB();
+        await _init();
+        // if (!_db) await _openDB();
         const tx = _db.transaction('tags', 'readwrite');
         const id = await tx.objectStore('tags').add({
           name: name,
