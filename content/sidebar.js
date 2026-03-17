@@ -12,11 +12,11 @@ import db from './db_module.js'
 
 class Sidebar {
 
-    sidebar;
-    prompt_list;
-    store_button;
-    tags_picked_list;
-    tags_available_list;
+    sidebar;                // the actual <div> added to document
+    prompt_list;            // the <div> where prompt <div>s gets added
+    store_button;           // the 'store' button
+    tags_picked_list;       // <select> for tag <option>s that have been added
+    tags_available_list;    // <select> for tag <option>s not yet added
 
     constructor() {
         this.sidebar = document.createElement('div');
