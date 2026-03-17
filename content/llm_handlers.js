@@ -14,7 +14,7 @@ You may obtain a copy of the License at
 class BaseHandler {
   _seen;          // WeakSet
   _prompt_list;   // <div> in Sidebar
-  last_prompt;    // last prompt node
+  _last_prompt;    // last prompt node
   _answer_map;    // WeakMap of prompt_node,answer_node pairs
 
   constructor(seen, prompt_list, answer_map) {
@@ -50,7 +50,7 @@ class BaseHandler {
       article.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
     item.appendChild(text_item);
-    this.last_prompt = item;
+    this._last_prompt = item;
     this._prompt_list.appendChild(item);
   }
 
@@ -62,7 +62,6 @@ class BaseHandler {
 
 export class MistralHandler extends BaseHandler {
   // Handler for Mistral Le Chat webchat at https://chat.mistral.ai/*
-  id = 'Mistral Le Chat';
 
   constructor(seen, prompt_list, answer_map) {
     super(seen, prompt_list, answer_map);
@@ -81,10 +80,10 @@ export class MistralHandler extends BaseHandler {
     } else if (role === 'assistant') {
       const answer_node = node.querySelector('div[data-message-part-type="answer"]');
       if (!answer_node) return;
-      console.log('answer_node: ', answer_node);
-      console.log('answer_node.childNodes: ', answer_node.childNodes);
-      if (this.last_prompt) {
-        this._answer_map.set(this.last_prompt, answer_node);
+      console.debug('_handle_node answer_node: ', answer_node);
+      console.debug('_handle_node answer_node.childNodes: ', answer_node.childNodes);
+      if (this._last_prompt) {
+        this._answer_map.set(this._last_prompt, answer_node);
       }
     }
   }
@@ -133,13 +132,11 @@ export class ChatGPTHandler extends BaseHandler {
     if (role === 'user') {
       this.itemize(a);
     } else if (role === 'assistant') {
-      console.log(node);
-      // TODO: find the right bit inside.
-      if (this.last_prompt) {
-        this._answer_map.set(this.last_prompt, node);
+      if (this._last_prompt) {
+        this._answer_map.set(this._last_prompt, node);
       }
     } else {
-      console.warn("Role was not 'user' or 'assistant'");
+      console.error("Role was not 'user' or 'assistant'");
     }
   }
 

@@ -19,7 +19,6 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
     const sidebar = new Sidebar();
     document.body.appendChild(sidebar.sidebar);
     let handler;
-    // TODO: check if I can make this into a module, have the handler routines returned from handler_modules
     if (!handler) {
         const hostname = window.location.hostname;
         if (hostname.includes("chat.mistral")) {
@@ -27,15 +26,14 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
         } else if (hostname.includes("chatgpt.com")) {
             handler = new ChatGPTHandler(seen, sidebar.prompt_list, answer_map);
         } else {
-            console.log("hostname does not match a handler");
+            console.error("hostname does not match a handler");
         }
     }
 
     sidebar.store_button.onclick = async () => {
-        const tags = [...this.tags_picked_list.querySelectorAll('option')].map(tag => tag.value);
-        // console.log('tags: ', tags);
+        const tags = [...sidebar.tags_picked_list.querySelectorAll('option')].map(tag => tag.value);
 
-        const checkboxes = [... this.prompt_list.querySelectorAll('input[type="checkbox"]:checked')];
+        const checkboxes = [...sidebar.prompt_list.querySelectorAll('input[type="checkbox"]:checked')];
         if (!checkboxes || checkboxes.length === 0) return;
 
         const prompt_divs = checkboxes.map(checkbox => {
@@ -44,25 +42,17 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
 
         for (const prompt_div of prompt_divs) {
             if (!prompt_div) continue;
-            //console.log('div: ', div);
             const span = prompt_div.querySelector('span');
             if (!span) continue;
-            //const topic = span.innerText;
-            //console.log('topic: ', topic);
-            //const prompt_hash = span.dataset.messageId;
-            //console.log('prompt_hash: ', prompt_hash);
-            //const content = div.title;
-            //console.log('content: ', content);
-            //console.log('tags: ', tags);
-            //console.log('span.dataset.answerHtml: ', span.dataset.answerHtml);
-            console.log('answer_node', answer_map[prompt_div]);
+            const answer_node = answer_map.get(prompt_div);
+            console.log('store button answer_node', answer_node);
+
             continue;
             await db.saveArticle(
                 span.dataset.MessageId,     // prompt_hash
                 span.innerText,             // topic
                 div.title,                  // prompt_content
                 span.dataset.answerHtml,    // answer_content
-                span.dataset.ModelId,       // model_id
                 tags);                      // list of tags
         }
     };
@@ -86,7 +76,7 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
 
     if ('navigation' in window) {
         window.navigation.addEventListener("navigate", (/*event*/) => {
-            console.log('navigation fired');
+            console.info('navigation fired');
             sidebar.prompt_list.replaceChildren();
             reset_page();
             handler.handle_mutation(document.body);
