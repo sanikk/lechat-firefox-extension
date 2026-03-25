@@ -7,17 +7,24 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
-import db from './backend_comms.js'
-import { optionize_tag } from './tags.js'
+import db from './db_module.js'
 
-export class Sidebar {
+
+class Sidebar {
+
+    sidebar;                // the actual <div> added to document
+    prompt_list;            // the <div> where prompt <div>s gets added
+    store_button;           // the 'store' button
+    tags_picked_list;       // <select> for tag <option>s that have been added
+    tags_available_list;    // <select> for tag <option>s not yet added
+
     constructor() {
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'tm-jump-sidebar';
 
         const controls_area = document.createElement('div');
         controls_area.appendChild(this.create_selections_buttons());
-        controls_area.appendChild(this.create_tag_area());
+        controls_area.appendChild(this.create_tags_area());
 
         this.sidebar.appendChild(controls_area);
 
@@ -31,98 +38,116 @@ export class Sidebar {
         this.prompt_list = document.createElement('div');
         this.sidebar.appendChild(this.prompt_list);
 
-        this.selections_reset_button.onclick = () => {
+    }
+    create_selections_buttons() {
+        // creates the 'store' and 'reset' buttons, places them in the sidebar
+        // 'store' function gets defined in 'main'
+        const buttons_row = document.createElement('div');
+
+        this.store_button = document.createElement('button');
+        this.store_button.textContent = 'Store';
+        this.store_button.className = 'big-button';
+
+        const reset_button = document.createElement('button');
+        reset_button.textContent = 'Reset';
+        reset_button.className = 'big-button';
+        reset_button.onclick = () => {
             const checkboxes = this.prompt_list.querySelectorAll('input');
             checkboxes.forEach((cb) => {
                 cb.checked = false;
             });
         };
-        this.selections_store_button.onclick = () => {
-            const tag_ids = [...this.list_picked_tags.querySelectorAll('option')].map(tag => tag.id);
-            console.log('tags: ', tag_ids);
-
-
-            const checkboxes = this.prompt_list.querySelectorAll('input[type="checkbox"]:checked');
-
-            const end_products = Array.from(checkboxes).map(checkbox => {
-                return checkbox?.parentElement?.querySelector('span');
-            });
-
-            console.log(end_products);
-        };
-    }
-    create_selections_buttons() {
-        const buttons_row = document.createElement('div');
-
-        this.selections_store_button = document.createElement('button');
-        this.selections_store_button.textContent = 'Store';
-        this.selections_store_button.className = 'big-button';
-
-        this.selections_reset_button = document.createElement('button');
-        this.selections_reset_button.textContent = 'Reset';
-        this.selections_reset_button.className = 'big-button';
-        buttons_row.append(this.selections_store_button, this.selections_reset_button);
+        buttons_row.append(this.store_button, reset_button);
         return buttons_row;
     }
 
-    create_tag_area() {
-        const tag_area = document.createElement('div');
+    create_tags_area() {
+        const tags_area = document.createElement('div');
 
-        const add_tag_row = document.createElement('div');
+        const tags_add_row = document.createElement('div');
 
-        const input_tag = document.createElement('input');
-        input_tag.type = 'text';
-        input_tag.placeholder = 'New tag';
-        input_tag.maxLength = 64;
-        input_tag.id = 'tag-input';
-        input_tag.style.backgroundColor = 'darkgray';
+        const tags_input = document.createElement('input');
+        tags_input.type = 'text';
+        tags_input.placeholder = 'New tag';
+        tags_input.maxLength = 64;
+        tags_input.id = 'tag-input';
+        tags_input.style.backgroundColor = 'darkgray';
 
-        const tag_create_button = document.createElement('button');
-        tag_create_button.textContent = 'Create';
-        tag_create_button.className = 'tag-button';
-        tag_create_button.onclick = async () => {
-            const tag = input_tag.value.trim();
-            if (!tag) return;
-            const ret = await db.saveTag(tag);
-            if (ret) {
-                optionize_tag(ret);
+        const tags_create_button = document.createElement('button');
+        tags_create_button.textContent = 'Create';
+        tags_create_button.className = 'tag-button';
+        tags_create_button.onclick = async () => {
+            try {
+                const tag_name = tags_input.value.trim();
+                if (!tag_name) return;
+                const ret = await db.saveTag(tag_name);
+                if (ret) {
+                    optionize_tag(ret, this.tags_available_list);
+                }
+                tags_input.value = '';
+            } catch (error) {
+                console.error('error creating a tag: ', error);
             }
-            input_tag.value = '';
         };
-        add_tag_row.append(input_tag, tag_create_button);
-        tag_area.append(add_tag_row);
+        tags_add_row.append(tags_input, tags_create_button);
+        tags_area.append(tags_add_row);
 
-        this.list_available_tags = document.createElement('select');
-        this.list_available_tags.className = 'tag-list';
-        this.list_available_tags.multiple = true;
-        tag_area.append(this.list_available_tags);
+        this.tags_available_list = document.createElement('select');
+        this.tags_available_list.className = 'tag-list';
+        this.tags_available_list.multiple = true;
+        tags_area.append(this.tags_available_list);
 
         const middleButtons = document.createElement('div');
-        this.tag_add_button = document.createElement('button');
-        this.tag_add_button.textContent = 'Add';
-        this.tag_add_button.className = 'tag-button';
-        this.tag_remove_button = document.createElement('button');
-        this.tag_remove_button.textContent = 'Remove';
-        this.tag_remove_button.className = 'tag-button';
-        middleButtons.append(this.tag_add_button, this.tag_remove_button);
-        tag_area.append(middleButtons);
 
-        this.list_picked_tags = document.createElement('select');
-        this.list_picked_tags.className = 'tag-list';
-        this.list_picked_tags.multiple = true;
-        tag_area.append(this.list_picked_tags);
-        // Button funcs to MOVE tags between lists
-        this.tag_add_button.onclick = () => {
-            Array.from(this.list_available_tags.selectedOptions).forEach((opt) => {
-                this.list_picked_tags.append(opt);
+        const tags_add_button = document.createElement('button');
+        tags_add_button.textContent = 'Add';
+        tags_add_button.className = 'tag-button';
+        tags_add_button.onclick = () => {
+            [...this.tags_available_list.selectedOptions].forEach((opt) => {
+                this.tags_picked_list.append(opt);
             });
         }
-        this.tag_remove_button.onclick = () => {
-            Array.from(this.list_picked_tags.selectedOptions).forEach((opt) => {
-                this.list_available_tags.append(opt);
+        const tags_remove_button = document.createElement('button');
+        tags_remove_button.textContent = 'Remove';
+        tags_remove_button.className = 'tag-button';
+        tags_remove_button.onclick = () => {
+            [...this.tags_picked_list.selectedOptions].forEach((opt) => {
+                this.tags_available_list.append(opt);
             });
 
         }
-        return tag_area;
+        middleButtons.append(tags_add_button, tags_remove_button);
+        tags_area.append(middleButtons);
+
+        this.tags_picked_list = document.createElement('select');
+        this.tags_picked_list.className = 'tag-list';
+        this.tags_picked_list.multiple = true;
+        tags_area.append(this.tags_picked_list);
+
+        return tags_area;
+    }
+
+    optionize_tag(tag) {
+        // Makes a tag row into an <option> for <select>
+        if (!tag) return;
+        const { id, name } = tag;
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = name;
+        this.tags_available_list.appendChild(opt);
+    }
+
+    async load_tags() {
+        // Loads tags and puts them in the sidebar tags_available_list
+        try {
+            this.tags_available_list.replaceChildren();
+            this.tags_picked_list.replaceChildren();
+            const tags = await db.getTags();
+            tags.forEach((tag) => this.optionize_tag(tag));
+        } catch (err) {
+            console.error('Failed to load tags:', err);
+        }
     }
 }
+
+export default Sidebar;
