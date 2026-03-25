@@ -45,6 +45,7 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
             const span = prompt_div.querySelector('span');
             if (!span) continue;
             const answer_node = answer_map.get(prompt_div);
+            // TODO: dev stuph, remove these
             console.log('store button answer_node', answer_node);
 
             continue;

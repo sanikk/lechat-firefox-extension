@@ -8,9 +8,9 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 */
 import { openDB } from 'idb';
+import markdown_converter from './markdown_converter';
+
 //import FlexSearch from 'flexsearch';
-
-
 
 
 const db = (() => {
@@ -60,12 +60,17 @@ const db = (() => {
 
   return {
 
-    async saveArticle(topic, content, tags) {
+    async saveArticle(prompt_hash, topic, prompt_content, answer_markdown, tags) {
       // TODO: test this out
-      if (!topic || !content) return;
+      if (!prompt_hash || !topic || !prompt_content, !answer_markdown) {
+        console.error('db.saveArticle failed with missing parameter(s)');
+        return;
+      }
       try {
         await _init();
+        //markdown_converter.formatNode()
 
+        return;
         const tx = _db.transaction(['articles', 'articles_tags'], 'readwrite');
         const articlesStore = tx.objectStore('articles');
         const articlesTagsStore = tx.objectStore('articles_tags');

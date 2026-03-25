@@ -80,8 +80,6 @@ export class MistralHandler extends BaseHandler {
     } else if (role === 'assistant') {
       const answer_node = node.querySelector('div[data-message-part-type="answer"]');
       if (!answer_node) return;
-      console.debug('_handle_node answer_node: ', answer_node);
-      console.debug('_handle_node answer_node.childNodes: ', answer_node.childNodes);
       if (this._last_prompt) {
         this._answer_map.set(this._last_prompt, answer_node);
       }
@@ -116,7 +114,6 @@ export class ChatGPTHandler extends BaseHandler {
   _old_itemize(article) {
     // TODO: rip everything needed from here and delete this.
     const prompt = article.querySelector('[data-message-author-role="user"]');
-    // const data_message_id = prompt.getAttribute?.('data-message-id'));
     text_item.dataset.messageId = prompt.getAttribute?.('data-message-id');
 
     text_item.onclick = () => {
