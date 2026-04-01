@@ -8,7 +8,7 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 */
 import { openDB } from 'idb';
-import markdown_converter from './markdown_converter';
+//import markdown_converter from './markdown_converter';
 
 //import FlexSearch from 'flexsearch';
 
@@ -70,7 +70,6 @@ const db = (() => {
         await _init();
         //markdown_converter.formatNode()
 
-        return;
         const tx = _db.transaction(['articles', 'articles_tags'], 'readwrite');
         const articlesStore = tx.objectStore('articles');
         const articlesTagsStore = tx.objectStore('articles_tags');

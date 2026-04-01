@@ -7,29 +7,27 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
+import sidebar_module from './sidebar.js';
+
 
 /*
  * @abstract
  */
 class BaseHandler {
   _seen;          // WeakSet
-  _prompt_list;   // <div> in Sidebar
   _last_prompt;    // last prompt node
-  _answer_map;    // WeakMap of prompt_node,answer_node pairs
 
-  constructor(seen, prompt_list, answer_map) {
-    if (!seen || !prompt_list || !answer_map) throw new Error("Handler needs a 'seen', 'prompt_list' and 'answer_map'.");
-    this._seen = seen;
-    this._prompt_list = prompt_list;
-    this._answer_map = answer_map;
+  constructor() {
+    this._seen = new WeakSet();
   }
+
 
   /*
    * @abstract
    */
   handle_mutation(/*mutations*/) { }
 
-  itemize(article, message_id) {
+  _itemize_prompt(article, message_id) {
     // Adds a quicklink to the "prompts" sidebar
     const prompt_text = article.innerText.trim();
     if (!prompt_text) return;
@@ -44,27 +42,28 @@ class BaseHandler {
     item.appendChild(checkbox);
 
     text_item.textContent = prompt_text.split('.')[0].slice(0, 50);
-    text_item.dataset.messageId = message_id;
+    item.dataset.messageId = message_id;
+    item.dataset.answerId = undefined;
 
     text_item.onclick = () => {
       article.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
     item.appendChild(text_item);
     this._last_prompt = item;
-    this._prompt_list.appendChild(item);
+    return item;
   }
 
-  reset_page(seen, answer_map) {
-    this._seen = seen;
-    this._answer_map = answer_map;
+  reset_page() {
+    this._seen = new WeakSet();
+    this._last_prompt = undefined;
   }
 };
 
 export class MistralHandler extends BaseHandler {
   // Handler for Mistral Le Chat webchat at https://chat.mistral.ai/*
 
-  constructor(seen, prompt_list, answer_map) {
-    super(seen, prompt_list, answer_map);
+  constructor() {
+    super();
   }
 
   _handle_node(node) {
@@ -72,16 +71,24 @@ export class MistralHandler extends BaseHandler {
     // add prompt node as entry to prompt_list
     // OR
     // add answer node to a prompt node entry in prompt_list
+    //
+    // node: div[data-message-author-role]
     this._seen.add(node);
     const role = node.getAttribute?.('data-message-author-role');
     if (role === 'user') {
       const message_id = node.getAttribute?.('data-message-id');
-      this.itemize(node, message_id);
+      sidebar_module.addToPromptList(this._itemize_prompt(node, message_id));
     } else if (role === 'assistant') {
       const answer_node = node.querySelector('div[data-message-part-type="answer"]');
       if (!answer_node) return;
       if (this._last_prompt) {
-        this._answer_map.set(this._last_prompt, answer_node);
+        console.debug('answer node id: ', node.id);
+        console.debug('node: ', node);
+        this._last_prompt.dataset.answerId = node.id;
+      } else {
+        console.error('answer node without prompt node?');
+        console.error('answer node: ', answer_node);
+        console.error('last prompt: ', this._last_prompt);
       }
     }
   }
@@ -89,16 +96,14 @@ export class MistralHandler extends BaseHandler {
   async handle_mutation(node) {
     // Checks a provided node for things to handle.
     // node can be document.body
-    if (node.id === "placeholder") return;
+    if (this._seen.has(node) || node.id === "placeholder") return;
     if (node.tagName === 'DIV' && node.hasAttribute('data-message-author-role')) {
-      this._handle_node(node);
+      return this._handle_node(node);
     } else {
-      const divs = node.querySelectorAll('div[data-message-author-role]');
-      divs.forEach(div => {
-        if (!(this._seen.has(div))) {
-          this._handle_node(div);
-        }
+      const divs = [...node.querySelectorAll('div[data-message-author-role]')].map(div => {
+        this._handle_node(div);
       });
+      return divs;
     }
   }
 
@@ -107,30 +112,30 @@ export class MistralHandler extends BaseHandler {
 
 export class ChatGPTHandler extends BaseHandler {
   // TODO: untested, unfinished.
-  constructor(seen, prompt_list, answer_map) {
-    super(seen, prompt_list, answer_map);
+  constructor() {
+    super();
   }
 
-  _old_itemize(article) {
-    // TODO: rip everything needed from here and delete this.
-    const prompt = article.querySelector('[data-message-author-role="user"]');
-    text_item.dataset.messageId = prompt.getAttribute?.('data-message-id');
-
-    text_item.onclick = () => {
-      article.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-    item.appendChild(text_item);
-    this._prompt_list.appendChild(item);
-  }
+  //   _old_itemize(article) {
+  //     // TODO: rip everything needed from here and delete this.
+  //     const prompt = article.querySelector('[data-message-author-role="user"]');
+  //     text_item.dataset.messageId = prompt.getAttribute?.('data-message-id');
+  // 
+  //     text_item.onclick = () => {
+  //       article.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  //     };
+  //     item.appendChild(text_item);
+  //     this._prompt_list.appendChild(item);
+  //   }
 
   _handle_node(node) {
     this._seen.add(node);
     const role = node.getAttribute('data-turn');
     if (role === 'user') {
-      this.itemize(a);
+      this._itemize_prompt(a);
     } else if (role === 'assistant') {
       if (this._last_prompt) {
-        this._answer_map.set(this._last_prompt, node);
+        console.debug('node: ', node);
       }
     } else {
       console.error("Role was not 'user' or 'assistant'");
