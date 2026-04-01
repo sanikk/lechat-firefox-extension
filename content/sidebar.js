@@ -18,6 +18,7 @@ const sidebar_module = (() => {
     const tags_picked = document.createElement('select');
     const tags_available = document.createElement('select');
     let tags_cache;
+
     _load_tags().catch(err => {
         console.error('Sidebar failed to load tags: ', err);
     })
@@ -102,6 +103,7 @@ const sidebar_module = (() => {
         console.debug('tags: ', tags);
         const articles = _gather_checked_articles();
         console.debug('articles: ', articles);
+        _clear_checkboxes();
     }
 
     function _optionize_tag(tag) {
@@ -142,6 +144,7 @@ const sidebar_module = (() => {
         const prompt_divs = checkboxes.map(checkbox => {
             return checkbox?.parentElement;
         });
+        console.debug('prompt_divs: ', prompt_divs);
         return prompt_divs;
     }
 
@@ -162,7 +165,7 @@ const sidebar_module = (() => {
             prompt_list.appendChild(prompt);
         },
 
-        reset_page() {
+        resetPage() {
             prompt_list.replaceChildren();
             _load_tags();
         }

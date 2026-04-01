@@ -31,6 +31,7 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
 
     const dom_observer = new MutationObserver(mutations => {
         for (const m of mutations) {
+            console.debug('mutation: ', m);
             for (const node of m.addedNodes) {
                 if (!(node instanceof HTMLElement)) continue;
                 handler.handle_mutation(node);
@@ -43,15 +44,9 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
     });
 
     if ('navigation' in window) {
-        window.navigation.addEventListener("navigate", async (event) => {
-            console.info('navigation fired');
-            console.info('event: ', event);
-            sidebar_module.reset_page();
+        window.navigation.addEventListener("navigate", (/*event*/) => {
             handler.reset_page();
-            console.debug('event.destination.url: ', event.destination.url);
-            if (event.destination.url !== 'https://chat.mistral.ai/chat' && document.body) {
-                handler.handle_mutation(document.body);
-            }
+            sidebar_module.resetPage();
         });
         // window.navigation.addEventListener("currententrychange", () => {
         //     console.info('currententrychange fired!');
