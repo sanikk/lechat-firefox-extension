@@ -31,7 +31,6 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
 
     const dom_observer = new MutationObserver(mutations => {
         for (const m of mutations) {
-            console.debug('mutation: ', m);
             for (const node of m.addedNodes) {
                 if (!(node instanceof HTMLElement)) continue;
                 handler.handle_mutation(node);
@@ -42,6 +41,9 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
         childList: true,
         subtree: true
     });
+
+    // let's handle the DOM on extension reload:
+    handler.handle_mutation(document.body);
 
     if ('navigation' in window) {
         window.navigation.addEventListener("navigate", (/*event*/) => {

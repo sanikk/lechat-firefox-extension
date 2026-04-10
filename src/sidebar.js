@@ -92,7 +92,7 @@ const sidebar_module = (() => {
     const separator = document.createElement('div');
     separator.innerHTML = `
             <div style="font-weight:bold; margin-bottom:8px;">
-                Prompt quicklinks
+                Prompt\nquicklinks
             </div>`;
     sidebar.appendChild(separator);
     sidebar.appendChild(prompt_list);
@@ -145,6 +145,17 @@ const sidebar_module = (() => {
             return checkbox?.parentElement;
         });
         console.debug('prompt_divs: ', prompt_divs);
+        const results = prompt_divs.map(prompt_item => {
+            if (!prompt_item) return;
+            const answer_id = prompt_item.dataset.answerId;
+            if (!answer_id) return;
+            // TODO: ok this is dependant on handler.
+            const answer_node = document.querySelector(`div[id="${answer_id}"]`)?.querySelector('[data-message-part-type="answer"]');
+            console.debug('answer node: ', answer_node);
+            if (!answer_node) return;
+            return { prompt: prompt_item.title, answer: answer_node, prompt_id: prompt_item.dataset.messageId };
+        });
+        console.debug('results: ', results);
         return prompt_divs;
     }
 

@@ -1,9 +1,11 @@
 const esbuild = require('esbuild');
 
 esbuild.build({
-  entryPoints: ['content/main.js'],
+  entryPoints: ['src/mistral_entry.js', 'src/chatgpt_handler.js'],
   bundle: true,
-  outfile: 'content/bundle.js',
-  format: 'iife',
-  globalName: 'MyExtension',
+  outdir: './dist',
+  format: 'esm',
+  target: 'es2018',
+  sourcemap: true,
+  globalName: 'LLMNotes',
 }).catch(() => process.exit(1));

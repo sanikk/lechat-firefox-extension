@@ -21,8 +21,8 @@ You may obtain a copy of the License at
 
 #tm-jump-sidebar {
   position: fixed;
-  top: 0;
-  right: 0;
+  top: 0 !important;
+  right: 0 !important;
   width: 260px;
   height: 100vh;
   background: #111;
