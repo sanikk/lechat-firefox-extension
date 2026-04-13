@@ -41,7 +41,9 @@ class BaseHandler {
     item.appendChild(checkbox);
 
     text_item.textContent = prompt_text.split('.')[0].slice(0, 50);
-    text_item.dataset.messageId = message_id;
+    item.dataset.messageId = message_id;
+    item.dataset.answerId = undefined;
+
 
     text_item.onclick = () => {
       article.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -78,7 +80,7 @@ export class MistralHandler extends BaseHandler {
       console.log('answer_node: ', answer_node);
       if (!answer_node) return;
       if (this._last_prompt) {
-        this._last_prompt.dataset.answerNode = answer_node;
+        this._last_prompt.dataset.answerId = node.id;
       }
     }
   }
@@ -127,7 +129,7 @@ export class ChatGPTHandler extends BaseHandler {
       this.itemize(a);
     } else if (role === 'assistant') {
       if (this._last_prompt) {
-        this._last_prompt.dataset.answerNode = node;
+        this._last_prompt.dataset.answerId = node.id;
       }
     } else {
       console.error("Role was not 'user' or 'assistant'");

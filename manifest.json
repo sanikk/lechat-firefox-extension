@@ -13,7 +13,7 @@
         "https://chat.mistral.ai/chat/*",
         "https://chatgpt.com/*"
       ],
-      "js": ["content/bundle.js"],
+      "js": ["dist/bundle.js"],
       "css": ["sidebar.css"],
       "run_at": "document_idle"
     }

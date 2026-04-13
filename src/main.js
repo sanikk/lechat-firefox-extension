@@ -44,8 +44,8 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
     };
 
     if ('navigation' in window) {
-        window.navigation.addEventListener("navigate", (/*event*/) => {
-            console.info('navigation fired');
+        window.navigation.addEventListener("navigate", (event) => {
+            console.info('navigation fired: ', event);
             reset_page();
         });
     };
