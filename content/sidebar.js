@@ -10,144 +10,180 @@ You may obtain a copy of the License at
 import db from './db_module.js'
 
 
-class Sidebar {
+const sidebar_module = (() => {
 
-    sidebar;                // the actual <div> added to document
-    prompt_list;            // the <div> where prompt <div>s gets added
-    store_button;           // the 'store' button
-    tags_picked_list;       // <select> for tag <option>s that have been added
-    tags_available_list;    // <select> for tag <option>s not yet added
+	const sidebar = document.createElement('div');
+	sidebar.id = 'tm-jump-sidebar';
+	const prompt_list = document.createElement('div');
+	const tags_picked = document.createElement('select');
+	const tags_available = document.createElement('select');
+	let tags_cache;
 
-    constructor() {
-        this.sidebar = document.createElement('div');
-        this.sidebar.id = 'tm-jump-sidebar';
+	_load_tags().catch(err => {
+		console.error('Sidebar failed to load tags: ', err);
+	})
 
-        const controls_area = document.createElement('div');
-        controls_area.appendChild(this.create_selections_buttons());
-        controls_area.appendChild(this.create_tags_area());
+	const store_button = document.createElement('button');
+	store_button.textContent = 'Store';
+	store_button.className = 'big-button';
+	store_button.onclick = _saveArticles;
+	const reset_button = document.createElement('button');
+	reset_button.textContent = 'Reset';
+	reset_button.className = 'big-button';
+	reset_button.onclick = _clear_selections;
+	sidebar.append(store_button, reset_button);
 
-        this.sidebar.appendChild(controls_area);
+	const tags_input = document.createElement('input');
+	tags_input.type = 'text';
+	tags_input.placeholder = 'New tag';
+	tags_input.maxLength = 64;
+	tags_input.id = 'tag-input';
+	tags_input.style.backgroundColor = 'darkgray';
+	const tags_create_button = document.createElement('button');
+	tags_create_button.textContent = 'Create';
+	tags_create_button.className = 'tag-button';
+	tags_create_button.onclick = async () => {
+		try {
+			const tag_name = tags_input.value.trim();
+			if (!tag_name) return;
+			const ret = await db.saveTag(tag_name);
+			if (ret) {
+				const tag = _optionize_tag(ret);
+				tags_available.appendChild(tag);
+				tags_cache.append(tag);
+			}
+			tags_input.value = '';
+		} catch (error) {
+			console.error('error creating a tag: ', error);
+		}
+	};
+	sidebar.append(tags_input, tags_create_button);
 
-        const separator = document.createElement('div');
-        separator.innerHTML = `
+	tags_available.className = 'tag-list';
+	tags_available.multiple = true;
+	sidebar.append(tags_available);
+
+
+	const tags_add_button = document.createElement('button');
+	tags_add_button.textContent = 'Add';
+	tags_add_button.className = 'tag-button';
+	tags_add_button.onclick = () => {
+		[...tags_available.selectedOptions].forEach((opt) => {
+			tags_picked.append(opt);
+		});
+	};
+	const tags_remove_button = document.createElement('button');
+	tags_remove_button.textContent = 'Remove';
+	tags_remove_button.className = 'tag-button';
+	tags_remove_button.onclick = () => {
+		[...tags_picked.selectedOptions].forEach((opt) => {
+			tags_available.append(opt);
+		});
+
+	};
+	sidebar.append(tags_add_button, tags_remove_button);
+
+	tags_picked.className = 'tag-list';
+	tags_picked.multiple = true;
+	sidebar.append(tags_picked);
+
+
+
+	const separator = document.createElement('div');
+	separator.innerHTML = `
             <div style="font-weight:bold; margin-bottom:8px;">
-                Prompts
+                Prompt\nquicklinks
             </div>`;
-        this.sidebar.appendChild(separator);
+	sidebar.appendChild(separator);
+	sidebar.appendChild(prompt_list);
 
-        this.prompt_list = document.createElement('div');
-        this.sidebar.appendChild(this.prompt_list);
 
-    }
-    create_selections_buttons() {
-        // creates the 'store' and 'reset' buttons, places them in the sidebar
-        // 'store' function gets defined in 'main'
-        const buttons_row = document.createElement('div');
+	async function _saveArticles() {
+		const tags = _gather_tags();
+		console.debug('tags: ', tags);
+		const articles = _gather_checked_articles();
+		console.debug('articles: ', articles);
+		_clear_checkboxes();
+	}
 
-        this.store_button = document.createElement('button');
-        this.store_button.textContent = 'Store';
-        this.store_button.className = 'big-button';
+	function _optionize_tag(tag) {
+		// Makes a tag row into an <option> for <select>
+		// tag - id,name pair
+		if (!tag) return;
+		const { id, name } = tag;
+		const opt = document.createElement('option');
+		opt.value = id;
+		opt.textContent = name;
+		return opt;
+	}
 
-        const reset_button = document.createElement('button');
-        reset_button.textContent = 'Reset';
-        reset_button.className = 'big-button';
-        reset_button.onclick = () => {
-            const checkboxes = this.prompt_list.querySelectorAll('input');
-            checkboxes.forEach((cb) => {
-                cb.checked = false;
-            });
-        };
-        buttons_row.append(this.store_button, reset_button);
-        return buttons_row;
-    }
+	async function _load_tags() {
+		// Loads tags and puts them in the sidebar tags_available_list
+		if (!tags_cache) {
+			try {
+				const tags = await db.getTags();
+				tags_cache = tags.map(tag => _optionize_tag(tag));
+			} catch (err) {
+				console.error('Failed to load tags:', err);
+				throw err;
+			}
+		}
+		tags_picked.replaceChildren();
+		tags_available.replaceChildren(...tags_cache);
+	}
 
-    create_tags_area() {
-        const tags_area = document.createElement('div');
+	function _gather_tags() {
+		const tags = [...tags_picked.querySelectorAll('option')].map(tag => tag.value);
+		return tags;
+	}
 
-        const tags_add_row = document.createElement('div');
+	function _gather_checked_articles() {
+		const checkboxes = [...prompt_list.querySelectorAll('input[type="checkbox"]:checked')];
+		if (!checkboxes || checkboxes.length === 0) return;
 
-        const tags_input = document.createElement('input');
-        tags_input.type = 'text';
-        tags_input.placeholder = 'New tag';
-        tags_input.maxLength = 64;
-        tags_input.id = 'tag-input';
-        tags_input.style.backgroundColor = 'darkgray';
+		const prompt_divs = checkboxes.map(checkbox => {
+			return checkbox?.parentElement;
+		});
+		console.debug('prompt_divs: ', prompt_divs);
+		const results = prompt_divs.map(prompt_item => {
+			if (!prompt_item) return;
+			const answer_id = prompt_item.dataset.answerId;
+			if (!answer_id) return;
+			// TODO: ok this is dependant on handler.
+			const answer_node = document.querySelector(`div[id="${answer_id}"]`)?.querySelector('[data-message-part-type="answer"]');
+			console.debug('answer node: ', answer_node);
+			if (!answer_node) return;
+			return { prompt: prompt_item.title, answer: answer_node, prompt_id: prompt_item.dataset.messageId };
+		});
+		console.debug('results: ', results);
+		return prompt_divs;
+	};
 
-        const tags_create_button = document.createElement('button');
-        tags_create_button.textContent = 'Create';
-        tags_create_button.className = 'tag-button';
-        tags_create_button.onclick = async () => {
-            try {
-                const tag_name = tags_input.value.trim();
-                if (!tag_name) return;
-                const ret = await db.saveTag(tag_name);
-                if (ret) {
-                    optionize_tag(ret, this.tags_available_list);
-                }
-                tags_input.value = '';
-            } catch (error) {
-                console.error('error creating a tag: ', error);
-            }
-        };
-        tags_add_row.append(tags_input, tags_create_button);
-        tags_area.append(tags_add_row);
 
-        this.tags_available_list = document.createElement('select');
-        this.tags_available_list.className = 'tag-list';
-        this.tags_available_list.multiple = true;
-        tags_area.append(this.tags_available_list);
+	function _clear_selections() {
+		const checkboxes = prompt_list.querySelectorAll('input');
+		checkboxes.forEach((cb) => {
+			cb.checked = false;
+		});
+		_load_tags();
+	};
 
-        const middleButtons = document.createElement('div');
+	if ('navigation' in window) {
+		window.navigation.addEventListener("navigate", (/*event*/) => {
+			prompt_list.replaceChildren();
+		});
+	};
 
-        const tags_add_button = document.createElement('button');
-        tags_add_button.textContent = 'Add';
-        tags_add_button.className = 'tag-button';
-        tags_add_button.onclick = () => {
-            [...this.tags_available_list.selectedOptions].forEach((opt) => {
-                this.tags_picked_list.append(opt);
-            });
-        }
-        const tags_remove_button = document.createElement('button');
-        tags_remove_button.textContent = 'Remove';
-        tags_remove_button.className = 'tag-button';
-        tags_remove_button.onclick = () => {
-            [...this.tags_picked_list.selectedOptions].forEach((opt) => {
-                this.tags_available_list.append(opt);
-            });
+	return {
+		getSidebar() {
+			return sidebar;
+		},
 
-        }
-        middleButtons.append(tags_add_button, tags_remove_button);
-        tags_area.append(middleButtons);
+		addToPromptList(prompt) {
+			prompt_list.appendChild(prompt);
+		},
 
-        this.tags_picked_list = document.createElement('select');
-        this.tags_picked_list.className = 'tag-list';
-        this.tags_picked_list.multiple = true;
-        tags_area.append(this.tags_picked_list);
+	};
+})();
+export default sidebar_module;
 
-        return tags_area;
-    }
-
-    optionize_tag(tag) {
-        // Makes a tag row into an <option> for <select>
-        if (!tag) return;
-        const { id, name } = tag;
-        const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = name;
-        this.tags_available_list.appendChild(opt);
-    }
-
-    async load_tags() {
-        // Loads tags and puts them in the sidebar tags_available_list
-        try {
-            this.tags_available_list.replaceChildren();
-            this.tags_picked_list.replaceChildren();
-            const tags = await db.getTags();
-            tags.forEach((tag) => this.optionize_tag(tag));
-        } catch (err) {
-            console.error('Failed to load tags:', err);
-        }
-    }
-}
-
-export default Sidebar;

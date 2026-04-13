@@ -11,17 +11,14 @@ You may obtain a copy of the License at
 /*
  * @abstract
  */
+import sidebar_module from "./sidebar";
+
 class BaseHandler {
   _seen;          // WeakSet
-  _prompt_list;   // <div> in Sidebar
   _last_prompt;    // last prompt node
-  _answer_map;    // WeakMap of prompt_node,answer_node pairs
 
-  constructor(seen, prompt_list, answer_map) {
-    if (!seen || !prompt_list || !answer_map) throw new Error("Handler needs a 'seen', 'prompt_list' and 'answer_map'.");
-    this._seen = seen;
-    this._prompt_list = prompt_list;
-    this._answer_map = answer_map;
+  constructor() {
+    this._seen = new WeakSet();
   }
 
   /*
@@ -51,20 +48,19 @@ class BaseHandler {
     };
     item.appendChild(text_item);
     this._last_prompt = item;
-    this._prompt_list.appendChild(item);
+    sidebar_module.addToPromptList(item);
   }
 
-  reset_page(seen, answer_map) {
-    this._seen = seen;
-    this._answer_map = answer_map;
+  reset_page() {
+    this._seen = new WeakSet();
   }
 };
 
 export class MistralHandler extends BaseHandler {
   // Handler for Mistral Le Chat webchat at https://chat.mistral.ai/*
 
-  constructor(seen, prompt_list, answer_map) {
-    super(seen, prompt_list, answer_map);
+  constructor() {
+    super();
   }
 
   _handle_node(node) {
@@ -79,9 +75,10 @@ export class MistralHandler extends BaseHandler {
       this.itemize(node, message_id);
     } else if (role === 'assistant') {
       const answer_node = node.querySelector('div[data-message-part-type="answer"]');
+      console.log('answer_node: ', answer_node);
       if (!answer_node) return;
       if (this._last_prompt) {
-        this._answer_map.set(this._last_prompt, answer_node);
+        this._last_prompt.dataset.answerNode = answer_node;
       }
     }
   }
@@ -89,7 +86,7 @@ export class MistralHandler extends BaseHandler {
   async handle_mutation(node) {
     // Checks a provided node for things to handle.
     // node can be document.body
-    if (node.id === "placeholder") return;
+    if (this._seen.has(node) || node.id === "placeholder") return;
     if (node.tagName === 'DIV' && node.hasAttribute('data-message-author-role')) {
       this._handle_node(node);
     } else {
@@ -107,8 +104,8 @@ export class MistralHandler extends BaseHandler {
 
 export class ChatGPTHandler extends BaseHandler {
   // TODO: untested, unfinished.
-  constructor(seen, prompt_list, answer_map) {
-    super(seen, prompt_list, answer_map);
+  constructor() {
+    super();
   }
 
   _old_itemize(article) {
@@ -120,7 +117,7 @@ export class ChatGPTHandler extends BaseHandler {
       article.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
     item.appendChild(text_item);
-    this._prompt_list.appendChild(item);
+    sidebar_module.addToPromptList(item);
   }
 
   _handle_node(node) {
@@ -130,7 +127,7 @@ export class ChatGPTHandler extends BaseHandler {
       this.itemize(a);
     } else if (role === 'assistant') {
       if (this._last_prompt) {
-        this._answer_map.set(this._last_prompt, node);
+        this._last_prompt.dataset.answerNode = node;
       }
     } else {
       console.error("Role was not 'user' or 'assistant'");
@@ -140,6 +137,7 @@ export class ChatGPTHandler extends BaseHandler {
   async handle_mutation(node) {
     // Checks a provided node for things to handle. 
     // node can be document.body
+    if (_seen.has(node)) return;
     if (node.matches?.('article')) {
       this._handle_node(node);
     } else {
