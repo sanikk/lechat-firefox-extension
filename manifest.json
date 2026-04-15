@@ -4,9 +4,6 @@
   "name": "LLM-Notes",
   "version": "0.2",
   "description": "LLM Notes: Save, organize, and build how-to guides from your LLM chats.",
-  "host_permissions": [
-    "http://localhost:8000/*"
-  ],
   "content_scripts": [
     {
       "matches": [
@@ -17,5 +14,14 @@
       "css": ["sidebar.css"],
       "run_at": "document_idle"
     }
+  ],
+  "background": {
+    "scripts": [
+      "dist/background_script.js"
+    ]
+  },
+  "permissions": [
+    "tabs",
+    "activeTab"
   ]
 }

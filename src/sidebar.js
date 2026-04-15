@@ -23,15 +23,15 @@ const sidebar_module = (() => {
 		console.error('Sidebar failed to load tags: ', err);
 	})
 
-	const store_button = document.createElement('button');
-	store_button.textContent = 'Store';
-	store_button.className = 'big-button';
-	store_button.onclick = _saveArticles;
-	const reset_button = document.createElement('button');
-	reset_button.textContent = 'Reset';
-	reset_button.className = 'big-button';
-	reset_button.onclick = _clear_selections;
-	sidebar.append(store_button, reset_button);
+	const storage_button = document.createElement('button');
+	storage_button.textContent = 'Storage';
+	storage_button.className = 'big-button';
+	storage_button.onclick = _open_storage_tab;
+	const settings_button = document.createElement('button');
+	settings_button.textContent = 'Settings';
+	settings_button.className = 'big-button';
+	settings_button.onclick = _open_settings_tab;
+	sidebar.append(storage_button, settings_button);
 
 	const tags_input = document.createElement('input');
 	tags_input.type = 'text';
@@ -87,7 +87,15 @@ const sidebar_module = (() => {
 	tags_picked.multiple = true;
 	sidebar.append(tags_picked);
 
-
+	const store_button = document.createElement('button');
+	store_button.textContent = 'Store';
+	store_button.className = 'big-button';
+	store_button.onclick = _saveArticles;
+	const reset_button = document.createElement('button');
+	reset_button.textContent = 'Reset';
+	reset_button.className = 'big-button';
+	reset_button.onclick = _clear_selections;
+	sidebar.append(store_button, reset_button);
 
 	const separator = document.createElement('div');
 	separator.innerHTML = `
@@ -96,6 +104,21 @@ const sidebar_module = (() => {
             </div>`;
 	sidebar.appendChild(separator);
 	sidebar.appendChild(prompt_list);
+
+	function _open_storage_tab() {
+		browser.runtime.sendMessage({
+			action: 'openStorageTab',
+			// url: 'your-extension-page.html' // or any URL you want to open
+		});
+	};
+
+	function _open_settings_tab() {
+		browser.runtime.sendMessage({
+			action: 'openSettingsTab',
+			// url: 'your-extension-page.html' // or any URL you want to open
+		});
+
+	}
 
 
 	async function _saveArticles() {

@@ -343,15 +343,15 @@ var MyExtension = (() => {
     _load_tags().catch((err) => {
       console.error("Sidebar failed to load tags: ", err);
     });
-    const store_button = document.createElement("button");
-    store_button.textContent = "Store";
-    store_button.className = "big-button";
-    store_button.onclick = _saveArticles;
-    const reset_button = document.createElement("button");
-    reset_button.textContent = "Reset";
-    reset_button.className = "big-button";
-    reset_button.onclick = _clear_selections;
-    sidebar.append(store_button, reset_button);
+    const storage_button = document.createElement("button");
+    storage_button.textContent = "Storage";
+    storage_button.className = "big-button";
+    storage_button.onclick = _open_storage_tab;
+    const settings_button = document.createElement("button");
+    settings_button.textContent = "Settings";
+    settings_button.className = "big-button";
+    settings_button.onclick = _open_settings_tab;
+    sidebar.append(storage_button, settings_button);
     const tags_input = document.createElement("input");
     tags_input.type = "text";
     tags_input.placeholder = "New tag";
@@ -400,6 +400,15 @@ var MyExtension = (() => {
     tags_picked.className = "tag-list";
     tags_picked.multiple = true;
     sidebar.append(tags_picked);
+    const store_button = document.createElement("button");
+    store_button.textContent = "Store";
+    store_button.className = "big-button";
+    store_button.onclick = _saveArticles;
+    const reset_button = document.createElement("button");
+    reset_button.textContent = "Reset";
+    reset_button.className = "big-button";
+    reset_button.onclick = _clear_selections;
+    sidebar.append(store_button, reset_button);
     const separator = document.createElement("div");
     separator.innerHTML = `
             <div style="font-weight:bold; margin-bottom:8px;">
@@ -408,6 +417,19 @@ quicklinks
             </div>`;
     sidebar.appendChild(separator);
     sidebar.appendChild(prompt_list);
+    function _open_storage_tab() {
+      browser.runtime.sendMessage({
+        action: "openStorageTab"
+        // url: 'your-extension-page.html' // or any URL you want to open
+      });
+    }
+    ;
+    function _open_settings_tab() {
+      browser.runtime.sendMessage({
+        action: "openSettingsTab"
+        // url: 'your-extension-page.html' // or any URL you want to open
+      });
+    }
     async function _saveArticles() {
       const tags = _gather_tags();
       console.debug("tags: ", tags);
@@ -510,7 +532,8 @@ quicklinks
       checkbox.value = text_item2;
       item2.appendChild(checkbox);
       text_item2.textContent = prompt_text.split(".")[0].slice(0, 50);
-      text_item2.dataset.messageId = message_id;
+      item2.dataset.messageId = message_id;
+      item2.dataset.answerId = void 0;
       text_item2.onclick = () => {
         article.scrollIntoView({ behavior: "smooth", block: "center" });
       };
@@ -538,7 +561,7 @@ quicklinks
         console.log("answer_node: ", answer_node);
         if (!answer_node) return;
         if (this._last_prompt) {
-          this._last_prompt.dataset.answerNode = answer_node;
+          this._last_prompt.dataset.answerId = node.id;
         }
       }
     }
@@ -577,7 +600,7 @@ quicklinks
         this.itemize(a);
       } else if (role === "assistant") {
         if (this._last_prompt) {
-          this._last_prompt.dataset.answerNode = node;
+          this._last_prompt.dataset.answerId = node.id;
         }
       } else {
         console.error("Role was not 'user' or 'assistant'");
@@ -630,8 +653,8 @@ quicklinks
     }
     ;
     if ("navigation" in window) {
-      window.navigation.addEventListener("navigate", () => {
-        console.info("navigation fired");
+      window.navigation.addEventListener("navigate", (event) => {
+        console.info("navigation fired: ", event);
         reset_page();
       });
     }
