@@ -17,5 +17,14 @@
       "css": ["sidebar.css"],
       "run_at": "document_idle"
     }
+  ],
+  "background": {
+    "scripts": [
+      "dist/background_script.js"
+    ]
+  },
+  "permissions": [
+    "tabs",
+    "activeTab"
   ]
 }
