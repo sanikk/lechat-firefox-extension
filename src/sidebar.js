@@ -30,7 +30,7 @@ const sidebar_module = (() => {
     const reset_button = document.createElement('button');
     reset_button.textContent = 'Reset';
     reset_button.className = 'big-button';
-    reset_button.onclick = _clear_checkboxes;
+    reset_button.onclick = _clear_selections;
     sidebar.append(store_button, reset_button);
 
     const tags_input = document.createElement('input');
@@ -103,7 +103,7 @@ const sidebar_module = (() => {
         console.debug('tags: ', tags);
         const articles = _gather_checked_articles();
         console.debug('articles: ', articles);
-        _clear_checkboxes();
+        _clear_selections();
     }
 
     function _optionize_tag(tag) {
@@ -160,13 +160,20 @@ const sidebar_module = (() => {
     }
 
 
-    function _clear_checkboxes() {
+
+    function _clear_selections() {
         const checkboxes = prompt_list.querySelectorAll('input');
         checkboxes.forEach((cb) => {
             cb.checked = false;
         });
-    }
+        _load_tags();
+    };
 
+    if ('navigation' in window) {
+        window.navigation.addEventListener("navigate", (/*event*/) => {
+            prompt_list.replaceChildren();
+        });
+    };
     return {
         getSidebar() {
             return sidebar;
@@ -184,3 +191,8 @@ const sidebar_module = (() => {
 
 })();
 export default sidebar_module;
+
+
+
+
+

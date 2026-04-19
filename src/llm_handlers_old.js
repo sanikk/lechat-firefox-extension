@@ -13,6 +13,8 @@ import sidebar_module from './sidebar.js';
 /*
  * @abstract
  */
+import sidebar_module from "./sidebar";
+
 class BaseHandler {
   _seen;          // WeakSet
   _last_prompt;    // last prompt node
@@ -45,12 +47,14 @@ class BaseHandler {
     item.dataset.messageId = message_id;
     item.dataset.answerId = undefined;
 
+
     text_item.onclick = () => {
       article.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
     item.appendChild(text_item);
     this._last_prompt = item;
     return item;
+    sidebar_module.addToPromptList(item);
   }
 
   reset_page() {
@@ -80,6 +84,7 @@ export class MistralHandler extends BaseHandler {
       sidebar_module.addToPromptList(this._itemize_prompt(node, message_id));
     } else if (role === 'assistant') {
       const answer_node = node.querySelector('div[data-message-part-type="answer"]');
+      console.log('answer_node: ', answer_node);
       if (!answer_node) return;
       if (this._last_prompt) {
         console.debug('answer node id: ', node.id);
@@ -89,6 +94,7 @@ export class MistralHandler extends BaseHandler {
         console.error('answer node without prompt node?');
         console.error('answer node: ', answer_node);
         console.error('last prompt: ', this._last_prompt);
+        this._last_prompt.dataset.answerId = node.id;
       }
     }
   }
@@ -127,6 +133,17 @@ export class ChatGPTHandler extends BaseHandler {
   //     item.appendChild(text_item);
   //     this._prompt_list.appendChild(item);
   //   }
+  _old_itemize(article) {
+    // TODO: rip everything needed from here and delete this.
+    const prompt = article.querySelector('[data-message-author-role="user"]');
+    text_item.dataset.messageId = prompt.getAttribute?.('data-message-id');
+
+    text_item.onclick = () => {
+      article.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    item.appendChild(text_item);
+    sidebar_module.addToPromptList(item);
+  }
 
   _handle_node(node) {
     this._seen.add(node);
@@ -136,6 +153,7 @@ export class ChatGPTHandler extends BaseHandler {
     } else if (role === 'assistant') {
       if (this._last_prompt) {
         console.debug('node: ', node);
+        this._last_prompt.dataset.answerId = node.id;
       }
     } else {
       console.error("Role was not 'user' or 'assistant'");
@@ -145,6 +163,7 @@ export class ChatGPTHandler extends BaseHandler {
   async handle_mutation(node) {
     // Checks a provided node for things to handle. 
     // node can be document.body
+    if (_seen.has(node)) return;
     if (node.matches?.('article')) {
       this._handle_node(node);
     } else {

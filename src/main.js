@@ -15,7 +15,6 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
     'use strict';
 
     document.body.appendChild(sidebar_module.getSidebar());
-
     let handler;
     if (!handler) {
         const hostname = window.location.hostname;
@@ -28,12 +27,11 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
         }
     }
 
-
-    const dom_observer = new MutationObserver(mutations => {
+    const dom_observer = new MutationObserver(async (mutations) => {
         for (const m of mutations) {
             for (const node of m.addedNodes) {
                 if (!(node instanceof HTMLElement)) continue;
-                handler.handle_mutation(node);
+                await handler.handle_mutation(node);
             }
         }
     });
@@ -41,17 +39,18 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
         childList: true,
         subtree: true
     });
-
-    // let's handle the DOM on extension reload:
-    handler.handle_mutation(document.body);
+    function reset_page() {
+        handler.reset_page();
+    };
 
     if ('navigation' in window) {
-        window.navigation.addEventListener("navigate", (/*event*/) => {
-            handler.reset_page();
-            sidebar_module.resetPage();
+        window.navigation.addEventListener("navigate", (event) => {
+            console.info('navigation fired: ', event);
+            reset_page();
         });
-        // window.navigation.addEventListener("currententrychange", () => {
-        //     console.info('currententrychange fired!');
-        // });
     };
+    // handle the current page if the extension just got loaded
+    if (document.body) {
+        handler.handle_mutation(document.body);
+    }
 })();

@@ -8,7 +8,7 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 */
 import { openDB } from 'idb';
-//import markdown_converter from './markdown_converter';
+// import markdown_converter from './markdown_converter';
 
 //import FlexSearch from 'flexsearch';
 

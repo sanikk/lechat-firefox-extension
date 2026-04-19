@@ -234,7 +234,11 @@ var MyExtension = (() => {
     }
   }));
 
+<<<<<<< HEAD
   // content/db_module.js
+=======
+  // src/db_module.js
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
   var db = /* @__PURE__ */ (() => {
     let _db;
     async function _openDB() {
@@ -269,6 +273,10 @@ var MyExtension = (() => {
         }
         try {
           await _init();
+<<<<<<< HEAD
+=======
+          return;
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
           const tx = _db.transaction(["articles", "articles_tags"], "readwrite");
           const articlesStore = tx.objectStore("articles");
           const articlesTagsStore = tx.objectStore("articles_tags");
@@ -331,7 +339,11 @@ var MyExtension = (() => {
   })();
   var db_module_default = db;
 
+<<<<<<< HEAD
   // content/sidebar.js
+=======
+  // src/sidebar.js
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
   var sidebar_module = (() => {
     const sidebar = document.createElement("div");
     sidebar.id = "tm-jump-sidebar";
@@ -349,7 +361,11 @@ var MyExtension = (() => {
     const reset_button = document.createElement("button");
     reset_button.textContent = "Reset";
     reset_button.className = "big-button";
+<<<<<<< HEAD
     reset_button.onclick = _clear_checkboxes;
+=======
+    reset_button.onclick = _clear_selections;
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
     sidebar.append(store_button, reset_button);
     const tags_input = document.createElement("input");
     tags_input.type = "text";
@@ -402,7 +418,12 @@ var MyExtension = (() => {
     const separator = document.createElement("div");
     separator.innerHTML = `
             <div style="font-weight:bold; margin-bottom:8px;">
+<<<<<<< HEAD
                 Prompt quicklinks
+=======
+                Prompt
+quicklinks
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
             </div>`;
     sidebar.appendChild(separator);
     sidebar.appendChild(prompt_list);
@@ -457,28 +478,52 @@ var MyExtension = (() => {
       console.debug("results: ", results);
       return prompt_divs;
     }
+<<<<<<< HEAD
     function _clear_checkboxes() {
+=======
+    ;
+    function _clear_selections() {
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
       const checkboxes = prompt_list.querySelectorAll("input");
       checkboxes.forEach((cb) => {
         cb.checked = false;
       });
+<<<<<<< HEAD
     }
+=======
+      _load_tags();
+    }
+    ;
+    if ("navigation" in window) {
+      window.navigation.addEventListener("navigate", () => {
+        prompt_list.replaceChildren();
+      });
+    }
+    ;
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
     return {
       getSidebar() {
         return sidebar;
       },
       addToPromptList(prompt) {
         prompt_list.appendChild(prompt);
+<<<<<<< HEAD
       },
       resetPage() {
         prompt_list.replaceChildren();
         _load_tags();
+=======
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
       }
     };
   })();
   var sidebar_default = sidebar_module;
 
+<<<<<<< HEAD
   // content/llm_handlers.js
+=======
+  // src/llm_handlers.js
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
   var BaseHandler = class {
     _seen;
     // WeakSet
@@ -492,6 +537,7 @@ var MyExtension = (() => {
      */
     handle_mutation() {
     }
+<<<<<<< HEAD
     _itemize_prompt(article, message_id) {
       const prompt_text = article.innerText.trim();
       if (!prompt_text) return;
@@ -515,6 +561,29 @@ var MyExtension = (() => {
     reset_page() {
       this._seen = /* @__PURE__ */ new WeakSet();
       this._last_prompt = void 0;
+=======
+    itemize(article, message_id) {
+      const prompt_text = article.innerText.trim();
+      if (!prompt_text) return;
+      const item2 = document.createElement("div");
+      item2.title = prompt_text;
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      const text_item2 = document.createElement("span");
+      checkbox.value = text_item2;
+      item2.appendChild(checkbox);
+      text_item2.textContent = prompt_text.split(".")[0].slice(0, 50);
+      text_item2.dataset.messageId = message_id;
+      text_item2.onclick = () => {
+        article.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+      item2.appendChild(text_item2);
+      this._last_prompt = item2;
+      sidebar_default.addToPromptList(item2);
+    }
+    reset_page() {
+      this._seen = /* @__PURE__ */ new WeakSet();
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
     }
   };
   var MistralHandler = class extends BaseHandler {
@@ -527,6 +596,7 @@ var MyExtension = (() => {
       const role = node.getAttribute?.("data-message-author-role");
       if (role === "user") {
         const message_id = node.getAttribute?.("data-message-id");
+<<<<<<< HEAD
         sidebar_default.addToPromptList(this._itemize_prompt(node, message_id));
       } else if (role === "assistant") {
         const answer_node = node.querySelector('div[data-message-part-type="answer"]');
@@ -539,18 +609,38 @@ var MyExtension = (() => {
           console.error("answer node without prompt node?");
           console.error("answer node: ", answer_node);
           console.error("last prompt: ", this._last_prompt);
+=======
+        this.itemize(node, message_id);
+      } else if (role === "assistant") {
+        const answer_node = node.querySelector('div[data-message-part-type="answer"]');
+        console.log("answer_node: ", answer_node);
+        if (!answer_node) return;
+        if (this._last_prompt) {
+          this._last_prompt.dataset.answerNode = answer_node;
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
         }
       }
     }
     async handle_mutation(node) {
       if (this._seen.has(node) || node.id === "placeholder") return;
       if (node.tagName === "DIV" && node.hasAttribute("data-message-author-role")) {
+<<<<<<< HEAD
         return this._handle_node(node);
       } else {
         const divs = [...node.querySelectorAll("div[data-message-author-role]")].map((div) => {
           this._handle_node(div);
         });
         return divs;
+=======
+        this._handle_node(node);
+      } else {
+        const divs = node.querySelectorAll("div[data-message-author-role]");
+        divs.forEach((div) => {
+          if (!this._seen.has(div)) {
+            this._handle_node(div);
+          }
+        });
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
       }
     }
   };
@@ -559,6 +649,7 @@ var MyExtension = (() => {
     constructor() {
       super();
     }
+<<<<<<< HEAD
     //   _old_itemize(article) {
     //     // TODO: rip everything needed from here and delete this.
     //     const prompt = article.querySelector('[data-message-author-role="user"]');
@@ -570,20 +661,42 @@ var MyExtension = (() => {
     //     item.appendChild(text_item);
     //     this._prompt_list.appendChild(item);
     //   }
+=======
+    _old_itemize(article) {
+      const prompt = article.querySelector('[data-message-author-role="user"]');
+      text_item.dataset.messageId = prompt.getAttribute?.("data-message-id");
+      text_item.onclick = () => {
+        article.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+      item.appendChild(text_item);
+      sidebar_default.addToPromptList(item);
+    }
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
     _handle_node(node) {
       this._seen.add(node);
       const role = node.getAttribute("data-turn");
       if (role === "user") {
+<<<<<<< HEAD
         this._itemize_prompt(a);
       } else if (role === "assistant") {
         if (this._last_prompt) {
           console.debug("node: ", node);
+=======
+        this.itemize(a);
+      } else if (role === "assistant") {
+        if (this._last_prompt) {
+          this._last_prompt.dataset.answerNode = node;
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
         }
       } else {
         console.error("Role was not 'user' or 'assistant'");
       }
     }
     async handle_mutation(node) {
+<<<<<<< HEAD
+=======
+      if (_seen.has(node)) return;
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
       if (node.matches?.("article")) {
         this._handle_node(node);
       } else {
@@ -597,7 +710,11 @@ var MyExtension = (() => {
     }
   };
 
+<<<<<<< HEAD
   // content/main.js
+=======
+  // src/main.js
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
   (async function() {
     "use strict";
     document.body.appendChild(sidebar_default.getSidebar());
@@ -612,11 +729,19 @@ var MyExtension = (() => {
         console.error("hostname does not match a handler");
       }
     }
+<<<<<<< HEAD
     const dom_observer = new MutationObserver((mutations) => {
       for (const m of mutations) {
         for (const node of m.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
           handler.handle_mutation(node);
+=======
+    const dom_observer = new MutationObserver(async (mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (!(node instanceof HTMLElement)) continue;
+          await handler.handle_mutation(node);
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
         }
       }
     });
@@ -624,6 +749,7 @@ var MyExtension = (() => {
       childList: true,
       subtree: true
     });
+<<<<<<< HEAD
     handler.handle_mutation(document.body);
     if ("navigation" in window) {
       window.navigation.addEventListener("navigate", () => {
@@ -632,5 +758,21 @@ var MyExtension = (() => {
       });
     }
     ;
+=======
+    function reset_page() {
+      handler.reset_page();
+    }
+    ;
+    if ("navigation" in window) {
+      window.navigation.addEventListener("navigate", () => {
+        console.info("navigation fired");
+        reset_page();
+      });
+    }
+    ;
+    if (document.body) {
+      handler.handle_mutation(document.body);
+    }
+>>>>>>> ec4953ea27afd0d01a8bce165e9b4491cc15bceb
   })();
 })();

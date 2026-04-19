@@ -9,14 +9,13 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://chat.mistral.ai/*"],
-      "js": ["dist/mistral_entry.js"],
-      "run_at": "document_end"
-    },
-    {
-      "matches": ["https://chatgpt.com/*"],
-      "js": ["dist/chatgpt_handler.js"],
-      "run_at": "document_end"
+      "matches": [
+        "https://chat.mistral.ai/chat/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": ["dist/bundle.js"],
+      "css": ["sidebar.css"],
+      "run_at": "document_idle"
     }
   ]
 }
