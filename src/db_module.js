@@ -24,29 +24,32 @@ const db = (() => {
   // });
 
   async function _openDB() {
-    _db = await openDB('LLMNotesDB', 1, {
-      upgrade(db) {
-        const tagsStore = db.createObjectStore('tags', { keyPath: 'id', autoIncrement: true });
-        tagsStore.createIndex('name', 'name', { unique: true });
-        // Tag (id: int, name: str)
+    try {
+      _db = await openDB('LLMNotesDB', 2, {
+        upgrade(db) {
+          console.info('running _openDB.upgrade to create the stores.');
+          const tagsStore = db.createObjectStore('tags', { keyPath: 'id', autoIncrement: true });
+          tagsStore.createIndex('name', 'name', { unique: true });
+          // Tag (id: int, name: str)
 
-        //const llmStore = db.createObjectStore('llms', { keyPath: 'id', autoIncrement: true });
-        //modelsStore.createIndex('name', 'name', { unique: true });
-        // Model (id: int, name: str)
+          const articlesStore = db.createObjectStore('articles', {
+            keyPath: 'id',
+            autoIncrement: true,
+          });
+          articlesStore.createIndex('topic', 'topic', { unique: false });
+          // Article (id: int, topic: str, content: str, model_id: int, added_on: date) 
 
-        const articlesStore = db.createObjectStore('articles', {
-          keyPath: 'id',
-          autoIncrement: true,
-        });
-        articlesStore.createIndex('topic', 'topic', { unique: false });
-        // Article (id: int, topic: str, content: str, model_id: int, added_on: date) 
-
-        const articlesTagsStore = db.createObjectStore('articles_tags', { keyPath: ['article_id', 'tag_id'] });
-        articlesTagsStore.createIndex('article_id', 'article_id');
-        articlesTagsStore.createIndex('tag_id', 'tag_id');
-        // ArticleTag (article_id: int, tag_id: int)
-      },
-    });
+          const articlesTagsStore = db.createObjectStore('articles_tags', { keyPath: ['article_id', 'tag_id'] });
+          articlesTagsStore.createIndex('article_id', 'article_id');
+          articlesTagsStore.createIndex('tag_id', 'tag_id');
+          // ArticleTag (article_id: int, tag_id: int)
+        },
+      });
+      console.debug('Available stores now: ', Array.from(_db.objectStoreNames));
+    } catch (error) {
+      console.error('openDB threw error: ', error);
+      throw error;
+    }
   }
 
   async function _init() {
