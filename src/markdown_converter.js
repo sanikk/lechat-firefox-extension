@@ -13,12 +13,12 @@ const markdown_converter = (() => {
 
   const _handlers = {
     "P": (node) => _parse_p_text(node),
-    "H1": (node) => "# ${node.textContent}",
-    "H2": (node) => "## ${node.textContent}",
-    "H3": (node) => "### ${node.textContent}",
-    "H4": (node) => "#### ${node.textContent}",
-    "H5": (node) => "##### ${node.textContent}",
-    "H6": (node) => "###### ${node.textContent}",
+    "H1": (node) => `# ${node.textContent}`,
+    "H2": (node) => `## ${node.textContent}`,
+    "H3": (node) => `### ${node.textContent}`,
+    "H4": (node) => `#### ${node.textContent}`,
+    "H5": (node) => `##### ${node.textContent}`,
+    "H6": (node) => `###### ${node.textContent}`,
     "HR": (/*node*/) => "___",
     "PRE": (node) => _format_code_block(node),
     "UL": (node) => _format_unordered_list(node),
@@ -29,12 +29,13 @@ const markdown_converter = (() => {
   function _format_code_block(child) {
     const language = child.querySelector('span.text-sm.font-medium.text-subtle')?.textContent || '';
     const code = child.querySelector('code')?.textContent;
-    return "```${language}\n${code}\n```";
+    return `\`\`\`${language}\n${code}\n\`\`\``;
   };
 
 
-  function _formatOrderedList(child) {
-    if (!child || !child.children || child.children.length === 0) return;
+  function _format_ordered_list(child) {
+    // if (!child || !child.childNodes || child.children.length === 0) return;
+    if (!child?.childNodes?.length > 0) return;
     let returnable = '';
     for (let i = 0; i < child.children.length; i++) {
       const line_item = child.children[i] || undefined;
@@ -62,10 +63,10 @@ const markdown_converter = (() => {
     for (const child_node of list_item.childNodes) {
       if (!child_node || (child_node.nodeValue && child_node.nodeValue === '\n')) continue;
       if (first) {
-        "${' '.repeat(indent)}${template.replace('content',_parse_p_text(child_node))}";
+        returnable += `${' '.repeat(indent)}${template.replace('{{content}}', _parse_p_text(child_node))}`;
         first = false;
       } else {
-        "${' '.repeat(indent + 2)}${_parse_p_text(child_node)}";
+        returnable += `${' '.repeat(indent + 2)}${_parse_p_text(child_node)}`;
       }
     }
   };
@@ -73,8 +74,8 @@ const markdown_converter = (() => {
   function _parse_p_text(child, indent = 0) {
     // parses a <p> of text to markdown
     if (!child || !child.childNodes?.length > 0) return;
-    if (child.childnodes.length === 1) return "${' '.repeat(indent)}${child.innerText}";
-    let returnable = "${' '.repeat(indent)}";
+    if (child.childNodes.length === 1) return `${' '.repeat(indent)}${child.innerText}`;
+    let returnable = `${' '.repeat(indent)}`;
     for (const child_node of child.childNodes) {
       switch (child_node?.nodeName) {
         case undefined: continue;
@@ -82,13 +83,13 @@ const markdown_converter = (() => {
           returnable += child_node.textContent + " ";
           continue;
         case "STRONG":
-          returnable += "**${child_node.textContent}** ";
+          returnable += `**${child_node.textContent}** `;
           continue;
         case "EM":
-          returnable += "*${child_node.textContent}* ";
+          returnable += `*${child_node.textContent}* `;
           continue;
         case "CODE":
-          returnable += "${child_node.textContent} ";
+          returnable += `${child_node.textContent} `;
           continue;
       }
     }
@@ -101,18 +102,24 @@ const markdown_converter = (() => {
       if (!node) return;
       console.debug('formatNode. node.childNodes: ', node.childNodes);
       if (!node.childNodes || node.childNodes.length === 0) {
-        console.debug('fast exit from formatNode!');
+        console.error('fast exit from formatNode! node: ', node);
         return;
       }
       let markdown = [];
       for (const child_node of node.childNodes) {
         if (child_node.nodeValue && child_node.nodeValue === '\n') continue;
-        const handler = _handlers[child_node.nodeValue];
+        const handler = _handlers[child_node.nodeName];
         markdown.push(handler(child_node));
-        // markdown.push(_formatChild(child_node));
       }
       console.debug(markdown);
     },
+
+    async format_prompt(prompt_text) {
+      // TODO: ok not sure about this, if it's needed at all
+      const parsed = _parse_p_text(prompt_text);
+      console.debug('prompt_text parsed: ', parsed);
+
+    }
   }
 })();
 
