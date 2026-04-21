@@ -8,7 +8,7 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 */
 import { openDB } from 'idb';
-// import markdown_converter from './markdown_converter';
+import markdown_converter from './markdown_converter';
 
 //import FlexSearch from 'flexsearch';
 
@@ -24,7 +24,7 @@ const db = (() => {
   // });
 
   async function _openDB() {
-    _db = await openDB('LLMNotesDB', 1, {
+    _db = await openDB('LLMNotesDB', 2, {
       upgrade(db) {
         const tagsStore = db.createObjectStore('tags', { keyPath: 'id', autoIncrement: true });
         tagsStore.createIndex('name', 'name', { unique: true });
@@ -60,12 +60,16 @@ const db = (() => {
 
   return {
 
-    async saveArticle(prompt_hash, topic, prompt_content, answer_markdown, tags) {
+    async saveArticle(prompt_hash, topic, prompt_content, answer_node, tags) {
       // TODO: test this out
-      if (!prompt_hash || !topic || !prompt_content, !answer_markdown) {
+      if (!prompt_hash || !topic || !prompt_content || !answer_node) {
         console.error('db.saveArticle failed with missing parameter(s)');
         return;
       }
+      markdown_converter.format_prompt(prompt_content);
+      markdown_converter.formatNode(answer_node);
+
+      return;
       try {
         await _init();
         //markdown_converter.formatNode()
