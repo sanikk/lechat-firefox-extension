@@ -39,16 +39,7 @@ import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
         childList: true,
         subtree: true
     });
-    function reset_page() {
-        handler.reset_page();
-    };
 
-    if ('navigation' in window) {
-        window.navigation.addEventListener("navigate", (event) => {
-            console.info('navigation fired: ', event);
-            reset_page();
-        });
-    };
     if (document.body) {
         handler.handle_mutation(document.body);
     }
