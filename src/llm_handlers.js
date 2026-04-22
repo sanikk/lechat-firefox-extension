@@ -7,25 +7,36 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
-
-/*
- * @abstract
- */
 import sidebar_module from "./sidebar";
 
+/**
+ * Base class of handlers
+ * @abstract
+ */
 class BaseHandler {
-  _seen;          // WeakSet
-  _last_prompt;    // last prompt node
+  _seen;        // WeakSet
+  _last_prompt; // last prompt node
 
   constructor() {
     this._seen = new WeakSet();
-  }
+    if ('navigation' in window) {
+      window.navigation.addEventListener("navigate", (/*event*/) => {
+        this.reset_page();
+      })
+    }
+  };
 
-  /*
+  /**
    * @abstract
    */
   handle_mutation(/*mutations*/) { }
 
+  /**
+  * Shared function to itemize a prompt to a quicklink in the sidebar.
+  *
+  * @param {DOM node} article
+  * @param {string} message_id
+  */
   itemize(article, message_id) {
     // Adds a quicklink to the "prompts" sidebar
     const prompt_text = article.innerText.trim();
@@ -58,18 +69,17 @@ class BaseHandler {
   }
 };
 
+/**
+ * Handler for Mistral's Le Chat
+ * @extends BaseHandler
+ */
 export class MistralHandler extends BaseHandler {
-  // Handler for Mistral Le Chat webchat at https://chat.mistral.ai/*
 
   constructor() {
     super();
   }
 
   _handle_node(node) {
-    // function to either
-    // add prompt node as entry to prompt_list
-    // OR
-    // add answer node to a prompt node entry in prompt_list
     this._seen.add(node);
     const role = node.getAttribute?.('data-message-author-role');
     if (role === 'user') {
@@ -86,8 +96,6 @@ export class MistralHandler extends BaseHandler {
   }
 
   async handle_mutation(node) {
-    // Checks a provided node for things to handle.
-    // node can be document.body
     if (this._seen.has(node) || node.id === "placeholder") return;
     if (node.tagName === 'DIV' && node.hasAttribute('data-message-author-role')) {
       this._handle_node(node);
@@ -100,7 +108,6 @@ export class MistralHandler extends BaseHandler {
       });
     }
   }
-
 };
 
 
