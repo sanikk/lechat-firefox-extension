@@ -8,9 +8,13 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 */
 
+/**
+* markdown converter module to convert an answer node to markdown format
+*/
 const markdown_converter = (() => {
-  // markdown converter module to convert an answer node to markdown format
-
+  /**
+   * Object lookup for DOM element conversions.
+   */
   const _handlers = {
     "P": (node) => _parse_p_text(node),
     "H1": (node) => `# ${node.textContent}`,
@@ -47,78 +51,104 @@ const markdown_converter = (() => {
   };
 
   function _format_unordered_list(child, indent = 0) {
-    if (!child || !child.children || child.children.length === 0) return;
-    let returnable = [];
-    for (const child_node of child.childNodes) {
-      if (!child_node || (child_node.nodeValue && child_node.nodeValue === '\n')) continue;
-      returnable.push(_handle_list_item(child_node, "- {{content}}", 0));
+    if (!child) return;
+    const returnable = [];
+    for (const list_item of child.children) {
+      const ret = _handle_unordered_list_item(list_item, indent);
+      if (Array.isArray(ret)) {
+        returnable.push(...ret);
+      } else if (ret) {
+        returnable.push(ret);
+      }
     }
+    return returnable;
   };
 
-  function _handle_list_item(list_item, template, indent = 0) {
-    // TODO: detect for nested unordered list.
-    if (!list_item || !list_item.childNodes?.length > 0) return undefined;
-    let first = true;
-    returnable = "";
+  function _handle_unordered_list_item(list_item, indent = 0) {
+    if (!list_item) return undefined;
+    const returnable = [];
     for (const child_node of list_item.childNodes) {
-      if (!child_node || (child_node.nodeValue && child_node.nodeValue === '\n')) continue;
-      if (first) {
-        returnable += `${' '.repeat(indent)}${template.replace('{{content}}', _parse_p_text(child_node))}`;
-        first = false;
+      if (child_node.nodeName === "#text" && child_node.nodeValue === "\n") continue;
+      if (child_node.nodeName === "UL") {
+        const ret = _format_unordered_list(child_node, indent + 2);
+        if (ret && ret.length !== 0) {
+          returnable.push(...ret);
+        }
       } else {
-        returnable += `${' '.repeat(indent + 2)}${_parse_p_text(child_node)}`;
+        const ret = _parse_p_text(child_node, indent);
+        if (ret) {
+          returnable.push(ret);
+        }
       }
     }
+    return returnable;
+
   };
 
-  function _parse_p_text(child, indent = 0) {
+  function _text_parser(node, indent = 0) {
+    switch (node.nodeName) {
+      case undefined:
+        return;
+      case '#text':
+      case "CODE":
+        return `${' '.repeat(indent)}${node.textContent} `;
+      case "STRONG":
+        return `${' '.repeat(indent)}**${node.textContent}** `;
+      case "EM":
+        return `${' '.repeat(indent)}*${node.textContent}* `;
+    }
+  };
+  function _parse_p_text(node, indent = 0) {
     // parses a <p> of text to markdown
-    if (!child || !child.childNodes?.length > 0) return;
-    if (child.childNodes.length === 1) return `${' '.repeat(indent)}${child.innerText}`;
+    if (/^(STRONG|EM|#text)$/.test(node.nodeName)) {
+      return _text_parser(node, indent);
+    }
     let returnable = `${' '.repeat(indent)}`;
-    for (const child_node of child.childNodes) {
-      switch (child_node?.nodeName) {
-        case undefined: continue;
-        case '#text':
-          returnable += child_node.textContent + " ";
-          continue;
-        case "STRONG":
-          returnable += `**${child_node.textContent}** `;
-          continue;
-        case "EM":
-          returnable += `*${child_node.textContent}* `;
-          continue;
-        case "CODE":
-          returnable += `${child_node.textContent} `;
-          continue;
+    for (const child_node of node.childNodes) {
+      const ret = _text_parser(child_node, indent);
+      if (ret) {
+        returnable += ret;
       }
     }
-    return returnable.trim();
+    return returnable;
+  };
+
+  function _format_answer_node(answer_node) {
+    // Function for formatting a Nodes contents to Markdown.
+    if (!answer_node) return;
+    let markdown = [];
+    for (const child_node of answer_node.children) {
+      const handler = _handlers[child_node.nodeName];
+      const ret = handler(child_node);
+      if (Array.isArray(ret)) {
+        markdown.push(...ret);
+      } else {
+        markdown.push(ret);
+      }
+    }
+    return markdown;
+  }
+
+  function _format_topic(topic) {
+    return `### ${topic}`;
   };
 
   return {
-    async formatNode(node) {
-      // Function for formatting a Nodes contents to Markdown.
-      if (!node) return;
-      console.debug('formatNode. node.childNodes: ', node.childNodes);
-      if (!node.childNodes || node.childNodes.length === 0) {
-        console.error('fast exit from formatNode! node: ', node);
-        return;
-      }
-      let markdown = [];
-      for (const child_node of node.childNodes) {
-        if (child_node.nodeValue && child_node.nodeValue === '\n') continue;
-        const handler = _handlers[child_node.nodeName];
-        markdown.push(handler(child_node));
-      }
-      console.debug(markdown);
-    },
-
-    async format_prompt(prompt_text) {
-      // TODO: ok not sure about this, if it's needed at all
-      const parsed = _parse_p_text(prompt_text);
-      console.debug('prompt_text parsed: ', parsed);
-
+    /**
+    * Function to convert prompt topic, prompt text and the LLM's answer to markdown.
+    * Very naive, no extra safety mechanisms.
+    *
+    * @param {string} topic
+    * @param {string} prompt_text
+    * @param {DOM node} answer_node
+    */
+    html_to_markdown(topic, prompt_text, answer_node) {
+      console.debug('decipher answer node: ', answer_node);
+      const big_topic = _format_topic(topic);
+      const answer_markdown = _format_answer_node(answer_node);
+      if (!answer_markdown) return;
+      const complete_markdown = [big_topic, prompt_text, ...answer_markdown];
+      return complete_markdown.join('\n');
     }
   }
 })();
