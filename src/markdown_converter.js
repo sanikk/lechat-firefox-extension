@@ -37,18 +37,17 @@ const markdown_converter = (() => {
   };
 
 
-  function _format_ordered_list(child) {
-    // if (!child || !child.childNodes || child.children.length === 0) return;
-    if (!child?.childNodes?.length > 0) return;
-    let returnable = '';
-    for (let i = 0; i < child.children.length; i++) {
-      const line_item = child.children[i] || undefined;
-      if (line_item) {
-        returnable += `${i} ${line_item.textContent.trim()}\n`;
-      }
+  function _format_ordered_list(child, indent = 0) {
+    const returnable = [];
+    let i = 1;
+    for (const list_item of child.childNodes) {
+      if (list_item.nodeName === "#text" && list_item.nodeValue === "\n") continue;
+      returnable.push(`${' '.repeat(indent)}${i}. ${_parse_p_text(list_item, indent)}`);
+      i++;
     }
     return returnable;
   };
+
 
   function _format_unordered_list(child, indent = 0) {
     if (!child) return;
@@ -68,9 +67,15 @@ const markdown_converter = (() => {
     if (!list_item) return undefined;
     const returnable = [];
     for (const child_node of list_item.childNodes) {
-      if (child_node.nodeName === "#text" && child_node.nodeValue === "\n") continue;
-      if (child_node.nodeName === "UL") {
+      const node_name = child_node.nodeName;
+      if (node_name === "#text" && child_node.nodeValue === "\n") continue;
+      if (node_name === "UL") {
         const ret = _format_unordered_list(child_node, indent + 2);
+        if (ret && ret.length !== 0) {
+          returnable.push(...ret);
+        }
+      } else if (node_name === "OL") {
+        const ret = _format_ordered_list(child_node, indent + 2);
         if (ret && ret.length !== 0) {
           returnable.push(...ret);
         }
