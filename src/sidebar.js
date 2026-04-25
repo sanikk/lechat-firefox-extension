@@ -50,7 +50,7 @@ const sidebar_module = (() => {
 			if (ret) {
 				const tag = _optionize_tag(ret);
 				tags_available.appendChild(tag);
-				tags_cache.append(tag);
+				tags_cache.push(tag);
 			}
 			tags_input.value = '';
 		} catch (error) {
