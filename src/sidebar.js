@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 */
-import db from './db_module.js'
+import db_module from './db_module.js'
 
 
 const sidebar_module = (() => {
@@ -46,11 +46,11 @@ const sidebar_module = (() => {
 		try {
 			const tag_name = tags_input.value.trim();
 			if (!tag_name) return;
-			const ret = await db.saveTag(tag_name);
+			const ret = await db_module.saveTag(tag_name);
 			if (ret) {
 				const tag = _optionize_tag(ret);
 				tags_available.appendChild(tag);
-				tags_cache.append(tag);
+				tags_cache.push(tag);
 			}
 			tags_input.value = '';
 		} catch (error) {
@@ -100,10 +100,13 @@ const sidebar_module = (() => {
 
 	async function _saveArticles() {
 		const tags = _gather_tags();
-		console.debug('tags: ', tags);
+		console.debug('_saveArticles tags: ', tags);
 		const articles = _gather_checked_articles();
-		console.debug('articles: ', articles);
-		_clear_checkboxes();
+		console.debug('_saveArticles articles: ', articles);
+		for (const { prompt_id, topic, prompt_text, answer_node } of articles) {
+			db_module.saveArticle(prompt_id, topic, prompt_text, answer_node, tags);
+		}
+		_clear_selections();
 	}
 
 	function _optionize_tag(tag) {
@@ -121,7 +124,7 @@ const sidebar_module = (() => {
 		// Loads tags and puts them in the sidebar tags_available_list
 		if (!tags_cache) {
 			try {
-				const tags = await db.getTags();
+				const tags = await db_module.getTags();
 				tags_cache = tags.map(tag => _optionize_tag(tag));
 			} catch (err) {
 				console.error('Failed to load tags:', err);
@@ -144,19 +147,19 @@ const sidebar_module = (() => {
 		const prompt_divs = checkboxes.map(checkbox => {
 			return checkbox?.parentElement;
 		});
-		console.debug('prompt_divs: ', prompt_divs);
+		console.debug('_gather_checked_articles prompt_divs: ', prompt_divs);
 		const results = prompt_divs.map(prompt_item => {
 			if (!prompt_item) return;
 			const answer_id = prompt_item.dataset.answerId;
 			if (!answer_id) return;
 			// TODO: ok this is dependant on handler.
 			const answer_node = document.querySelector(`div[id="${answer_id}"]`)?.querySelector('[data-message-part-type="answer"]');
-			console.debug('answer node: ', answer_node);
+			console.debug('_gather_checked_articles answer node: ', answer_node);
 			if (!answer_node) return;
-			return { prompt: prompt_item.title, answer: answer_node, prompt_id: prompt_item.dataset.messageId };
+			return { prompt_id: prompt_item.dataset.messageId, topic: prompt_item.querySelector('span')?.textContent, prompt_text: prompt_item.title, answer_node: answer_node };
 		});
 		console.debug('results: ', results);
-		return prompt_divs;
+		return results;
 	};
 
 

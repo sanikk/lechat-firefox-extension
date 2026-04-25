@@ -234,11 +234,153 @@ var MyExtension = (() => {
     }
   }));
 
+  // src/markdown_converter.js
+  var markdown_converter = /* @__PURE__ */ (() => {
+    const _handlers = {
+      "P": (node) => _parse_p_text(node),
+      "H1": (node) => `# ${node.textContent}`,
+      "H2": (node) => `## ${node.textContent}`,
+      "H3": (node) => `### ${node.textContent}`,
+      "H4": (node) => `#### ${node.textContent}`,
+      "H5": (node) => `##### ${node.textContent}`,
+      "H6": (node) => `###### ${node.textContent}`,
+      "HR": () => "___",
+      "PRE": (node) => _format_code_block(node),
+      "UL": (node) => _format_unordered_list(node),
+      "OL": (node) => _format_ordered_list(node),
+      "DIV": (node) => _format_table(node)
+    };
+    function _format_code_block(child) {
+      const language = child.querySelector("span.text-sm.font-medium.text-subtle")?.textContent || "";
+      const code = child.querySelector("code")?.textContent;
+      return `\`\`\`${language}
+${code}
+\`\`\``;
+    }
+    ;
+    function _format_ordered_list(child, indent = 0) {
+      const returnable = [];
+      let i = 1;
+      for (const list_item of child.childNodes) {
+        if (list_item.nodeName === "#text" && list_item.nodeValue === "\n") continue;
+        returnable.push(`${" ".repeat(indent)}${i}. ${_parse_p_text(list_item, indent)}`);
+        i++;
+      }
+      return returnable;
+    }
+    ;
+    function _format_unordered_list(child, indent = 0) {
+      if (!child) return;
+      const returnable = [];
+      for (const list_item of child.children) {
+        const ret = _handle_unordered_list_item(list_item, indent);
+        if (Array.isArray(ret)) {
+          returnable.push(...ret);
+        } else if (ret) {
+          returnable.push(ret);
+        }
+      }
+      return returnable;
+    }
+    ;
+    function _handle_unordered_list_item(list_item, indent = 0) {
+      if (!list_item) return void 0;
+      const returnable = [];
+      for (const child_node of list_item.childNodes) {
+        const node_name = child_node.nodeName;
+        if (node_name === "#text" && child_node.nodeValue === "\n") continue;
+        if (node_name === "UL") {
+          const ret = _format_unordered_list(child_node, indent + 2);
+          if (ret && ret.length !== 0) {
+            returnable.push(...ret);
+          }
+        } else if (node_name === "OL") {
+          const ret = _format_ordered_list(child_node, indent + 2);
+          if (ret && ret.length !== 0) {
+            returnable.push(...ret);
+          }
+        } else {
+          const ret = _parse_p_text(child_node, indent);
+          if (ret) {
+            returnable.push(ret);
+          }
+        }
+      }
+      return returnable;
+    }
+    ;
+    function _text_parser(node, indent = 0) {
+      switch (node.nodeName) {
+        case void 0:
+          return;
+        case "#text":
+        case "CODE":
+          return `${" ".repeat(indent)}${node.textContent} `;
+        case "STRONG":
+          return `${" ".repeat(indent)}**${node.textContent}** `;
+        case "EM":
+          return `${" ".repeat(indent)}*${node.textContent}* `;
+      }
+    }
+    ;
+    function _parse_p_text(node, indent = 0) {
+      if (/^(STRONG|EM|#text)$/.test(node.nodeName)) {
+        return _text_parser(node, indent);
+      }
+      let returnable = `${" ".repeat(indent)}`;
+      for (const child_node of node.childNodes) {
+        const ret = _text_parser(child_node, indent);
+        if (ret) {
+          returnable += ret;
+        }
+      }
+      return returnable;
+    }
+    ;
+    function _format_answer_node(answer_node) {
+      if (!answer_node) return;
+      let markdown = [];
+      for (const child_node of answer_node.children) {
+        const handler = _handlers[child_node.nodeName];
+        const ret = handler(child_node);
+        if (Array.isArray(ret)) {
+          markdown.push(...ret);
+        } else {
+          markdown.push(ret);
+        }
+      }
+      return markdown;
+    }
+    function _format_topic(topic) {
+      return `### ${topic}`;
+    }
+    ;
+    return {
+      /**
+      * Function to convert prompt topic, prompt text and the LLM's answer to markdown.
+      * Very naive, no extra safety mechanisms.
+      *
+      * @param {string} topic
+      * @param {string} prompt_text
+      * @param {DOM node} answer_node
+      */
+      html_to_markdown(topic, prompt_text, answer_node) {
+        console.debug("decipher answer node: ", answer_node);
+        const big_topic = _format_topic(topic);
+        const answer_markdown = _format_answer_node(answer_node);
+        if (!answer_markdown) return;
+        const complete_markdown = [big_topic, prompt_text, ...answer_markdown];
+        return complete_markdown.join("\n");
+      }
+    };
+  })();
+  var markdown_converter_default = markdown_converter;
+
   // src/db_module.js
   var db = /* @__PURE__ */ (() => {
     let _db;
     async function _openDB() {
-      _db = await openDB("LLMNotesDB", 1, {
+      _db = await openDB("LLMNotesDB", 2, {
         upgrade(db2) {
           const tagsStore = db2.createObjectStore("tags", { keyPath: "id", autoIncrement: true });
           tagsStore.createIndex("name", "name", { unique: true });
@@ -262,11 +404,26 @@ var MyExtension = (() => {
       }
     }
     return {
-      async saveArticle(prompt_hash, topic, prompt_content, answer_markdown, tags) {
-        if (!prompt_hash || !topic || !prompt_content, !answer_markdown) {
+      /**
+      * async function to save the article in the IndexedDb.
+      *
+      * @param {string} prompt_id
+      * @param {string} topic
+      * @param {string} prompt_text
+      * @param {DOM node} answer_node
+      * @param {array} tags
+      */
+      async saveArticle(prompt_id, topic, prompt_text, answer_node, tags) {
+        if (!prompt_id || !topic || !prompt_text || !answer_node) {
           console.error("db.saveArticle failed with missing parameter(s)");
           return;
         }
+        const markdown = markdown_converter_default.html_to_markdown(topic, prompt_text, answer_node);
+        console.debug("Final product:");
+        console.debug("prompt id: ", prompt_id);
+        console.debug("markdown: ", markdown);
+        console.debug("tags: ", tags);
+        return;
         try {
           await _init();
           return;
@@ -274,8 +431,9 @@ var MyExtension = (() => {
           const articlesStore = tx.objectStore("articles");
           const articlesTagsStore = tx.objectStore("articles_tags");
           const article_id = await articlesStore.add({
+            hash: prompt_id,
             topic,
-            content,
+            content: markdown,
             added_on: /* @__PURE__ */ new Date()
           });
           if (tags && tags.length > 0) {
@@ -305,6 +463,11 @@ var MyExtension = (() => {
           throw error;
         }
       },
+      /**
+      * Async function to load the tags from IndexedDb.
+      *
+      * @returns {array} of id,value pairs
+      */
       async getTags() {
         try {
           await _init();
@@ -410,10 +573,13 @@ quicklinks
     sidebar.appendChild(prompt_list);
     async function _saveArticles() {
       const tags = _gather_tags();
-      console.debug("tags: ", tags);
+      console.debug("_saveArticles tags: ", tags);
       const articles = _gather_checked_articles();
-      console.debug("articles: ", articles);
-      _clear_checkboxes();
+      console.debug("_saveArticles articles: ", articles);
+      for (const { prompt_id, topic, prompt_text, answer_node } of articles) {
+        db_module_default.saveArticle(prompt_id, topic, prompt_text, answer_node, tags);
+      }
+      _clear_selections();
     }
     function _optionize_tag(tag) {
       if (!tag) return;
@@ -446,18 +612,18 @@ quicklinks
       const prompt_divs = checkboxes.map((checkbox) => {
         return checkbox?.parentElement;
       });
-      console.debug("prompt_divs: ", prompt_divs);
+      console.debug("_gather_checked_articles prompt_divs: ", prompt_divs);
       const results = prompt_divs.map((prompt_item) => {
         if (!prompt_item) return;
         const answer_id = prompt_item.dataset.answerId;
         if (!answer_id) return;
         const answer_node = document.querySelector(`div[id="${answer_id}"]`)?.querySelector('[data-message-part-type="answer"]');
-        console.debug("answer node: ", answer_node);
+        console.debug("_gather_checked_articles answer node: ", answer_node);
         if (!answer_node) return;
-        return { prompt: prompt_item.title, answer: answer_node, prompt_id: prompt_item.dataset.messageId };
+        return { prompt_id: prompt_item.dataset.messageId, topic: prompt_item.querySelector("span")?.textContent, prompt_text: prompt_item.title, answer_node };
       });
       console.debug("results: ", results);
-      return prompt_divs;
+      return results;
     }
     ;
     function _clear_selections() {
@@ -493,12 +659,23 @@ quicklinks
     // last prompt node
     constructor() {
       this._seen = /* @__PURE__ */ new WeakSet();
+      if ("navigation" in window) {
+        window.navigation.addEventListener("navigate", () => {
+          this.reset_page();
+        });
+      }
     }
-    /*
+    /**
      * @abstract
      */
     handle_mutation() {
     }
+    /**
+    * Shared function to itemize a prompt to a quicklink in the sidebar.
+    *
+    * @param {DOM node} article
+    * @param {string} message_id
+    */
     itemize(article, message_id) {
       const prompt_text = article.innerText.trim();
       if (!prompt_text) return;
@@ -510,7 +687,8 @@ quicklinks
       checkbox.value = text_item2;
       item2.appendChild(checkbox);
       text_item2.textContent = prompt_text.split(".")[0].slice(0, 50);
-      text_item2.dataset.messageId = message_id;
+      item2.dataset.messageId = message_id;
+      item2.dataset.answerId = void 0;
       text_item2.onclick = () => {
         article.scrollIntoView({ behavior: "smooth", block: "center" });
       };
@@ -523,7 +701,6 @@ quicklinks
     }
   };
   var MistralHandler = class extends BaseHandler {
-    // Handler for Mistral Le Chat webchat at https://chat.mistral.ai/*
     constructor() {
       super();
     }
@@ -538,7 +715,7 @@ quicklinks
         console.log("answer_node: ", answer_node);
         if (!answer_node) return;
         if (this._last_prompt) {
-          this._last_prompt.dataset.answerNode = answer_node;
+          this._last_prompt.dataset.answerId = node.id;
         }
       }
     }
@@ -577,7 +754,7 @@ quicklinks
         this.itemize(a);
       } else if (role === "assistant") {
         if (this._last_prompt) {
-          this._last_prompt.dataset.answerNode = node;
+          this._last_prompt.dataset.answerId = node.id;
         }
       } else {
         console.error("Role was not 'user' or 'assistant'");
@@ -625,17 +802,6 @@ quicklinks
       childList: true,
       subtree: true
     });
-    function reset_page() {
-      handler.reset_page();
-    }
-    ;
-    if ("navigation" in window) {
-      window.navigation.addEventListener("navigate", () => {
-        console.info("navigation fired");
-        reset_page();
-      });
-    }
-    ;
     if (document.body) {
       handler.handle_mutation(document.body);
     }
