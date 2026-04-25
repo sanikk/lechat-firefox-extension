@@ -39,7 +39,7 @@ const db = (() => {
           autoIncrement: true,
         });
         articlesStore.createIndex('topic', 'topic', { unique: false });
-        // Article (id: int, topic: str, content: str, model_id: int, added_on: date) 
+        // Article (id: int, topic: str, content: str, added_on: date) 
 
         const articlesTagsStore = db.createObjectStore('articles_tags', { keyPath: ['article_id', 'tag_id'] });
         articlesTagsStore.createIndex('article_id', 'article_id');
@@ -59,32 +59,38 @@ const db = (() => {
   }
 
   return {
-
-    async saveArticle(prompt_hash, topic, prompt_content, answer_node, tags) {
+    /**
+    * async function to save the article in the IndexedDb.
+    *
+    * @param {string} prompt_id
+    * @param {string} topic
+    * @param {string} prompt_text
+    * @param {DOM node} answer_node
+    * @param {array} tags
+    */
+    async saveArticle(prompt_id, topic, prompt_text, answer_node, tags) {
       // TODO: test this out
-      if (!prompt_hash || !topic || !prompt_content || !answer_node) {
+      if (!prompt_id || !topic || !prompt_text || !answer_node) {
         console.error('db.saveArticle failed with missing parameter(s)');
         return;
       }
-      markdown_converter.format_prompt(prompt_content);
-      markdown_converter.formatNode(answer_node);
-
-      return;
+      const markdown = markdown_converter.html_to_markdown(topic, prompt_text, answer_node)
+      console.debug('Final product:')
+      console.debug('prompt id: ', prompt_id);
+      console.debug('markdown: ', markdown);
+      console.debug('tags: ', tags);
+      // return;
       try {
         await _init();
-        //markdown_converter.formatNode()
-
-        return;
         const tx = _db.transaction(['articles', 'articles_tags'], 'readwrite');
         const articlesStore = tx.objectStore('articles');
         const articlesTagsStore = tx.objectStore('articles_tags');
-
         const article_id = await articlesStore.add({
+          hash: prompt_id,
           topic: topic,
-          content: content,
+          content: markdown,
           added_on: new Date(),
         });
-
         if (tags && tags.length > 0) {
           await Promise.all(
             tags.map(async (tag) => {
@@ -117,10 +123,15 @@ const db = (() => {
       }
     },
 
+    /**
+    * Async function to load the tags from IndexedDb.
+    *
+    * @returns {array} of id,value pairs
+    */
     async getTags() {
       try {
         await _init();
-        return await _db.getAll('tags');
+        return _db.getAll('tags');
       } catch (error) {
         console.error('db.getTags threw an error: ', error);
         throw error;
