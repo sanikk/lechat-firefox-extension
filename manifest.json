@@ -14,8 +14,12 @@
         "https://chatgpt.com/*"
       ],
       "js": ["dist/bundle.js"],
-      "css": ["sidebar.css"],
+      "css": ["dist/sidebar.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*/*/storage-tab.html?ext=llm-notes"],
+      "js": ["dist/storage_tab.js"]
     }
   ],
   "background": {
@@ -24,6 +28,7 @@
     ]
   },
   "permissions": [
+    "storage",
     "tabs",
     "activeTab"
   ]
