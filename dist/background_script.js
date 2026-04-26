@@ -1,21 +1,4 @@
-function _get_current_tab() {
-  browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-    const currentTab = tabs[0];
-    // Get all tabs in the current window to find the index
-    browser.tabs.query({ currentWindow: true }).then((allTabs) => {
-      const currentTabIndex = allTabs.findIndex(tab => tab.id === currentTab.id);
-      sendResponse({ currentTabIndex });
-    });
-    return true; // Required for async sendResponse
-  });
-
-
-}
-
-
-
-function _generateSettingsHTML(darkmode) {
-  return `
+var LLMNotesBackground=(()=>{function o(e){return`
     <!DOCTYPE html>
     <html>
     <head>
@@ -27,40 +10,16 @@ function _generateSettingsHTML(darkmode) {
     </head>
     <body>
       <h1>Settings</h1>
-      <p>Dark mode: <span id="darkmode-state">${darkmode}</span></p>
+      <p>Dark mode: <span id="darkmode-state">${e}</span></p>
       <button id="toggle-darkmode">Toggle Dark Mode</button>
       <script>
         document.getElementById('toggle-darkmode').addEventListener('click', () => {
-          const newState = !(${darkmode});
+          const newState = !(${e});
           window.location.href = 'data:text/html,' + encodeURIComponent(
             generateSettingsHTML(newState)
           );
         });
-      </script>
+      <\/script>
     </body>
     </html>
-  `;
-}
-
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'openSettingsTab') {
-    const darkmode = true; // Fetch this from storage or state
-    const html = _generateSettingsHTML(darkmode);
-    browser.tabs.create({
-      url: `data:text/html,${encodeURIComponent(html)}`,
-      active: true
-    });
-  }
-
-
-  if (message.action === 'openStorageTab') {
-    console.debug('message: openStorageTab')
-    console.debug('sender: ', sender);
-    console.debug('sendResponse', sendResponse);
-    browser.tabs.create({
-      url: 'dist/template/storage.html',
-      active: true // makes the new tab active
-    });
-  }
-}
-);
+  `}browser.runtime.onMessage.addListener((e,t,n)=>{if(e.action==="openSettingsTab"){let r=o(!0);browser.tabs.create({url:`data:text/html,${encodeURIComponent(r)}`,active:!0})}e.action==="openStorageTab"&&(console.debug("message: openStorageTab"),console.debug("sender: ",t),console.debug("sendResponse",n),browser.tabs.create({url:browser.runtime.getURL("dist/template/storage-tab.html?ext=llm-notes"),active:!0}))});})();
