@@ -1,25 +1,32 @@
-import * as db_module from './db_module.js';
+import db_module from './db_module.js'
 
-// DOM Elements
 const entriesContainer = document.getElementById('entries');
 const deleteSelectedButton = document.getElementById('delete-selected');
 const exportSelectedButton = document.getElementById('export-selected');
 const selectAllCheckbox = document.getElementById('select-all');
 
-// State
 let entries = [];
 let selectedIds = new Set();
 
-// --- Main ---
 async function init() {
-  entries = await db_module.getAllEntries();
-  renderEntries();
+  browser.runtime.sendMessage({
+    type: 'GET_ALL_ARTICLES'
+  },
+    (response) => {
+      if (browser.runtime.lastError) {
+        console.error('Error:', browser.runtime.lastError);
+      } else {
+        console.log('Received response:', response);
+        // Handle the response (e.g., response.articles)
+      }
+    }
+  );
+  //renderEntries();
   setupEventListeners();
 }
 
 init();
 
-// --- Render ---
 function renderEntries() {
   entriesContainer.innerHTML = '';
   for (const entry of entries) {
@@ -41,9 +48,7 @@ function renderEntries() {
   }
 }
 
-// --- Event Listeners ---
 function setupEventListeners() {
-  // Select all
   selectAllCheckbox.addEventListener('change', (e) => {
     const checkboxes = document.querySelectorAll('.entry-checkbox');
     for (const checkbox of checkboxes) {
@@ -54,7 +59,6 @@ function setupEventListeners() {
     }
   });
 
-  // Entry checkboxes
   entriesContainer.addEventListener('change', (e) => {
     if (e.target.classList.contains('entry-checkbox')) {
       const id = parseInt(e.target.getAttribute('data-id'));
@@ -63,7 +67,6 @@ function setupEventListeners() {
     }
   });
 
-  // Edit buttons
   entriesContainer.addEventListener('click', async (e) => {
     if (e.target.classList.contains('edit-button')) {
       const id = parseInt(e.target.getAttribute('data-id'));
@@ -71,7 +74,6 @@ function setupEventListeners() {
     }
   });
 
-  // Delete selected
   deleteSelectedButton.addEventListener('click', async () => {
     if (selectedIds.size === 0) return;
     if (confirm('Delete selected entries?')) {
@@ -82,7 +84,6 @@ function setupEventListeners() {
     }
   });
 
-  // Export selected
   exportSelectedButton.addEventListener('click', () => {
     if (selectedIds.size === 0) return;
     const selectedEntries = entries.filter(entry => selectedIds.has(entry.id));
@@ -92,7 +93,6 @@ function setupEventListeners() {
   });
 }
 
-// --- Edit Entry ---
 async function editEntry(id) {
   const entry = entries.find(e => e.id === id);
   const newContent = prompt('Edit entry:', entry.content);
