@@ -8,8 +8,6 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 */
 import { openDB } from 'idb';
-import markdown_converter from './markdown_converter';
-
 //import FlexSearch from 'flexsearch';
 
 
@@ -30,16 +28,12 @@ const db = (() => {
         tagsStore.createIndex('name', 'name', { unique: true });
         // Tag (id: int, name: str)
 
-        //const llmStore = db.createObjectStore('llms', { keyPath: 'id', autoIncrement: true });
-        //modelsStore.createIndex('name', 'name', { unique: true });
-        // Model (id: int, name: str)
-
         const articlesStore = db.createObjectStore('articles', {
           keyPath: 'id',
           autoIncrement: true,
         });
         articlesStore.createIndex('topic', 'topic', { unique: false });
-        // Article (id: int, topic: str, content: str, added_on: date) 
+        // Article (id: int, hash: str, topic: str, content: str, added_on: date) 
 
         const articlesTagsStore = db.createObjectStore('articles_tags', { keyPath: ['article_id', 'tag_id'] });
         articlesTagsStore.createIndex('article_id', 'article_id');
@@ -64,19 +58,20 @@ const db = (() => {
     *
     * @param {string} prompt_id
     * @param {string} topic
-    * @param {string} prompt_text
-    * @param {DOM node} answer_node
+    * @param {string} markdown
     * @param {array} tags
     */
-    async saveArticle(prompt_id, topic, prompt_text, answer_node, tags) {
-      // TODO: test this out
-      if (!prompt_id || !topic || !prompt_text || !answer_node) {
+    async saveArticle(prompt_id, topic, markdown, tags) {
+      // async saveArticle(prompt_id, topic, prompt_text, answer_node, tags) {
+      // if (!prompt_id || !topic || !prompt_text || !answer_node) {
+      if (!prompt_id || !topic || !markdown) {
         console.error('db.saveArticle failed with missing parameter(s)');
         return;
       }
-      const markdown = markdown_converter.html_to_markdown(topic, prompt_text, answer_node)
+      //const markdown = markdown_converter.html_to_markdown(topic, prompt_text, answer_node)
       console.debug('Final product:')
       console.debug('prompt id: ', prompt_id);
+      console.debug('topic: ', topic);
       console.debug('markdown: ', markdown);
       console.debug('tags: ', tags);
       // return;
@@ -91,21 +86,43 @@ const db = (() => {
           content: markdown,
           added_on: new Date(),
         });
+        console.debug('saved article, next is tags');
+        console.debug('article_id: ', article_id);
+        console.debug('tags: ', tags);
         if (tags && tags.length > 0) {
-          await Promise.all(
-            tags.map(async (tag) => {
-              await articlesTagsStore.add({
-                tag_id: tag.id,
-                article_id: article_id,
-              });
-            })
-          );
+          const promises = tags.map(tag => {
+            console.debug('article_id: ', article_id, ', tag: ', tag);
+            articlesTagsStore.add({
+              article_id: article_id,
+              tag_id: Number(tag),
+            });
+          });
+          await Promise.all(promises);
         }
         await tx.done;
       } catch (error) {
         console.error('db.saveArticle threw an error: ', error);
         throw error;
       }
+    },
+
+    async getArticlesAll() {
+      try {
+        await _init();
+        const tx = _db.transaction('articles', 'readonly');
+        const store = tx.objectStore('articles');
+        return store.getAll();
+      } catch (error) {
+        console.error('db.getArticlesAll threw an error: ', error);
+        throw error;
+      }
+      //  try {
+      //    await _init();
+      //    return _db.getAll('articles');
+      //  } catch (error) {
+      //    console.error('db.getArticlesAll threw an error: ', error);
+      //    throw error;
+      //  }
     },
 
     async getArticlesByTagId(tag_id) {

@@ -8,6 +8,7 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-2.0
 */
 import db_module from './db_module.js'
+import markdown_converter from './markdown_converter.js';
 
 
 const sidebar_module = (() => {
@@ -23,15 +24,18 @@ const sidebar_module = (() => {
 		console.error('Sidebar failed to load tags: ', err);
 	})
 
-	const store_button = document.createElement('button');
-	store_button.textContent = 'Store';
-	store_button.className = 'big-button';
-	store_button.onclick = _saveArticles;
-	const reset_button = document.createElement('button');
-	reset_button.textContent = 'Reset';
-	reset_button.className = 'big-button';
-	reset_button.onclick = _clear_selections;
-	sidebar.append(store_button, reset_button);
+	const storage_tab_button = document.createElement('button');
+	storage_tab_button.textContent = 'StorageTab';
+	storage_tab_button.className = 'big-button';
+	storage_tab_button.onclick = () => browser.runtime.sendMessage({
+		action: 'openStorageTab',
+	});
+	const settings_tab_button = document.createElement('button');
+	settings_tab_button.textContent = 'Reset';
+	settings_tab_button.className = 'big-button';
+	settings_tab_button.onclick = () => console.debug('To be implemented');
+
+	sidebar.append(storage_tab_button, settings_tab_button);
 
 	const tags_input = document.createElement('input');
 	tags_input.type = 'text';
@@ -88,6 +92,15 @@ const sidebar_module = (() => {
 	sidebar.append(tags_picked);
 
 
+	const store_button = document.createElement('button');
+	store_button.textContent = 'Store';
+	store_button.className = 'big-button';
+	store_button.onclick = _saveArticles;
+	const reset_button = document.createElement('button');
+	reset_button.textContent = 'Reset';
+	reset_button.className = 'big-button';
+	reset_button.onclick = _clear_selections;
+	sidebar.append(store_button, reset_button);
 
 	const separator = document.createElement('div');
 	separator.innerHTML = `
@@ -104,7 +117,9 @@ const sidebar_module = (() => {
 		const articles = _gather_checked_articles();
 		console.debug('_saveArticles articles: ', articles);
 		for (const { prompt_id, topic, prompt_text, answer_node } of articles) {
-			db_module.saveArticle(prompt_id, topic, prompt_text, answer_node, tags);
+			const markdown = markdown_converter.html_to_markdown(topic, prompt_text, answer_node)
+			console.debug('_saveArticles prompt_id: ', prompt_id, ', topic: ', topic, ', markdown: ', markdown, ', tags: ', tags);
+			db_module.saveArticle(prompt_id, topic, markdown, tags);
 		}
 		_clear_selections();
 	}
