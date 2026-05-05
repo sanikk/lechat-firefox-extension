@@ -9,6 +9,7 @@ You may obtain a copy of the License at
 */
 import sidebar_module from './sidebar.js';
 import { MistralHandler, ChatGPTHandler } from './llm_handlers.js';
+import background_comms from './background_comms.js';
 
 (async function() {
 
