@@ -364,6 +364,18 @@ var LLMNotes = (() => {
   })();
   var db_module_default = db;
 
+  // src/storage_window.js
+  var storage_module = (() => {
+    const storage_window = document.createElement("div");
+    storage_window.id = "storage-window";
+    return {
+      getWindow() {
+        return storage_window;
+      }
+    };
+  })();
+  var storage_window_default = storage_module;
+
   // src/markdown_converter.js
   var markdown_converter = /* @__PURE__ */ (() => {
     const _handlers = {
@@ -508,6 +520,7 @@ ${code}
 
   // src/sidebar.js
   var sidebar_module = (() => {
+    const storage_window = storage_window_default.getWindow();
     const sidebar = document.createElement("div");
     sidebar.id = "tm-jump-sidebar";
     const prompt_list = document.createElement("div");
@@ -520,9 +533,10 @@ ${code}
     const storage_tab_button = document.createElement("button");
     storage_tab_button.textContent = "StorageTab";
     storage_tab_button.className = "big-button";
-    storage_tab_button.onclick = () => browser.runtime.sendMessage({
-      action: "openStorageTab"
-    });
+    storage_tab_button.onclick = () => {
+      document.querySelector("main").classList.toggle("hidden");
+      storage_window.classList.toggle("hidden");
+    };
     const settings_tab_button = document.createElement("button");
     settings_tab_button.textContent = "Reset";
     settings_tab_button.className = "big-button";
