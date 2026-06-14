@@ -1,21 +1,71 @@
-< !DOCTYPE html >
-    <html>
-      <head>
-        <title>Storage Manager</title>
-        <style>
-          body {font - family: Arial, sans-serif; margin: 20px; }
-          .entry {margin: 8px 0; padding: 8px; border: 1px solid #ddd; }
-          button {margin - left: 8px; cursor: pointer; }
-        </style>
-      </head>
-      <body>
-        <h1>Storage Manager</h1>
-        <button id="delete-selected">Delete Selected</button>
-        <button id="export-selected">Export Selected</button>
-        <div>
-          <input type="checkbox" id="select-all"> Select All </input>
-        </div>
-        <div id="entries"></div>
-        <script src="/dist/storage_tab.js"></script>
-      </body>
-    </html>
+<html>
+  <head>
+    <title>Storage Manager</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .filter-section {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .article-item {
+        margin: 8px 0;
+        padding: 8px;
+        border: 1px solid #ddd;
+      }
+      button, input[type="text"], select {
+        padding: 6px 10px;
+        font-size: 14px;
+      }
+      button {
+        cursor: pointer;
+      }
+      #prompt-input {
+        width: 100%;
+        min-height: 100px;
+        margin-top: 16px;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Storage Manager</h1>
+
+    <div class="controls">
+      <button id="delete-selected">Delete Selected</button>
+      <button id="export-selected">Export Selected</button>
+      <button id="reset-selections">Reset Selections</button>
+    </div>
+
+    <div class="filter-section">
+      <input type="text" id="text-search" placeholder="Search by text...">
+      <select id="tag-filter">
+        <option value="">All Tags</option>
+      </select>
+      <button id="clear-filters">Clear Filters</button>
+    </div>
+
+    <div>
+      <input type="checkbox" id="select-all"> <label for="select-all">Select All</label>
+    </div>
+
+    <div id="entries"></div>
+
+    <textarea id="prompt-input" placeholder="Enter your prompt here..."></textarea>
+
+    <script src="/dist/storage_tab.js"></script>
+  </body>
+</html>

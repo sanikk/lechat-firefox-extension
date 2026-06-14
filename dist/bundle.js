@@ -1,4 +1,4 @@
-var MyExtension = (() => {
+var LLMNotes = (() => {
   // node_modules/idb/build/index.js
   var instanceOfAny = (object, constructors) => constructors.some((c) => object instanceof c);
   var idbProxyableTypes;
@@ -234,6 +234,136 @@ var MyExtension = (() => {
     }
   }));
 
+  // src/db_module.js
+  var db = /* @__PURE__ */ (() => {
+    let _db;
+    async function _openDB() {
+      _db = await openDB("LLMNotesDB", 2, {
+        upgrade(db2) {
+          const tagsStore = db2.createObjectStore("tags", { keyPath: "id", autoIncrement: true });
+          tagsStore.createIndex("name", "name", { unique: true });
+          const articlesStore = db2.createObjectStore("articles", {
+            keyPath: "id",
+            autoIncrement: true
+          });
+          articlesStore.createIndex("topic", "topic", { unique: false });
+          const articlesTagsStore = db2.createObjectStore("articles_tags", { keyPath: ["article_id", "tag_id"] });
+          articlesTagsStore.createIndex("article_id", "article_id");
+          articlesTagsStore.createIndex("tag_id", "tag_id");
+        }
+      });
+    }
+    async function _init() {
+      try {
+        if (!_db) await _openDB();
+      } catch (error) {
+        console.error("db._init() threw an error: ", error);
+        throw error;
+      }
+    }
+    return {
+      /**
+      * async function to save the article in the IndexedDb.
+      *
+      * @param {string} prompt_id
+      * @param {string} topic
+      * @param {string} markdown
+      * @param {array} tags
+      */
+      async saveArticle(prompt_id, topic, markdown, tags) {
+        if (!prompt_id || !topic || !markdown) {
+          console.error("db.saveArticle failed with missing parameter(s)");
+          return;
+        }
+        console.debug("Final product:");
+        console.debug("prompt id: ", prompt_id);
+        console.debug("topic: ", topic);
+        console.debug("markdown: ", markdown);
+        console.debug("tags: ", tags);
+        try {
+          await _init();
+          const tx = _db.transaction(["articles", "articles_tags"], "readwrite");
+          const articlesStore = tx.objectStore("articles");
+          const articlesTagsStore = tx.objectStore("articles_tags");
+          const article_id = await articlesStore.add({
+            hash: prompt_id,
+            topic,
+            content: markdown,
+            added_on: /* @__PURE__ */ new Date()
+          });
+          console.debug("saved article, next is tags");
+          console.debug("article_id: ", article_id);
+          console.debug("tags: ", tags);
+          if (tags && tags.length > 0) {
+            const promises = tags.map((tag) => {
+              console.debug("article_id: ", article_id, ", tag: ", tag);
+              articlesTagsStore.add({
+                article_id,
+                tag_id: Number(tag)
+              });
+            });
+            await Promise.all(promises);
+          }
+          await tx.done;
+        } catch (error) {
+          console.error("db.saveArticle threw an error: ", error);
+          throw error;
+        }
+      },
+      async getArticlesAll() {
+        try {
+          await _init();
+          const tx = _db.transaction("articles", "readonly");
+          const store = tx.objectStore("articles");
+          return store.getAll();
+        } catch (error) {
+          console.error("db.getArticlesAll threw an error: ", error);
+          throw error;
+        }
+      },
+      async getArticlesByTagId(tag_id) {
+        try {
+          await _init();
+          const article_ids = await _db.getAllFromIndex("articles_tags", "tag_id", tag_id);
+          if (!article_ids || article_ids.length === 0) return [];
+          return await _db.getAllFromIndex("articles", "id", article_ids);
+        } catch (error) {
+          console.error("db.getArticlesByTagId threw an error: ", error);
+          throw error;
+        }
+      },
+      /**
+      * Async function to load the tags from IndexedDb.
+      *
+      * @returns {array} of id,value pairs
+      */
+      async getTags() {
+        try {
+          await _init();
+          return _db.getAll("tags");
+        } catch (error) {
+          console.error("db.getTags threw an error: ", error);
+          throw error;
+        }
+      },
+      async saveTag(name) {
+        try {
+          await _init();
+          const tx = _db.transaction("tags", "readwrite");
+          const id = await tx.objectStore("tags").add({
+            name
+          });
+          await tx.done;
+          return { id, name };
+        } catch (error) {
+          console.error("db.saveTag threw an error: ", error);
+          throw error;
+        }
+      }
+    };
+  })();
+  var db_module_default = db;
+
   // src/markdown_converter.js
   var markdown_converter = /* @__PURE__ */ (() => {
     const _handlers = {
@@ -376,125 +506,6 @@ ${code}
   })();
   var markdown_converter_default = markdown_converter;
 
-  // src/db_module.js
-  var db = /* @__PURE__ */ (() => {
-    let _db;
-    async function _openDB() {
-      _db = await openDB("LLMNotesDB", 2, {
-        upgrade(db2) {
-          const tagsStore = db2.createObjectStore("tags", { keyPath: "id", autoIncrement: true });
-          tagsStore.createIndex("name", "name", { unique: true });
-          const articlesStore = db2.createObjectStore("articles", {
-            keyPath: "id",
-            autoIncrement: true
-          });
-          articlesStore.createIndex("topic", "topic", { unique: false });
-          const articlesTagsStore = db2.createObjectStore("articles_tags", { keyPath: ["article_id", "tag_id"] });
-          articlesTagsStore.createIndex("article_id", "article_id");
-          articlesTagsStore.createIndex("tag_id", "tag_id");
-        }
-      });
-    }
-    async function _init() {
-      try {
-        if (!_db) await _openDB();
-      } catch (error) {
-        console.error("db._init() threw an error: ", error);
-        throw error;
-      }
-    }
-    return {
-      /**
-      * async function to save the article in the IndexedDb.
-      *
-      * @param {string} prompt_id
-      * @param {string} topic
-      * @param {string} prompt_text
-      * @param {DOM node} answer_node
-      * @param {array} tags
-      */
-      async saveArticle(prompt_id, topic, prompt_text, answer_node, tags) {
-        if (!prompt_id || !topic || !prompt_text || !answer_node) {
-          console.error("db.saveArticle failed with missing parameter(s)");
-          return;
-        }
-        const markdown = markdown_converter_default.html_to_markdown(topic, prompt_text, answer_node);
-        console.debug("Final product:");
-        console.debug("prompt id: ", prompt_id);
-        console.debug("markdown: ", markdown);
-        console.debug("tags: ", tags);
-        return;
-        try {
-          await _init();
-          return;
-          const tx = _db.transaction(["articles", "articles_tags"], "readwrite");
-          const articlesStore = tx.objectStore("articles");
-          const articlesTagsStore = tx.objectStore("articles_tags");
-          const article_id = await articlesStore.add({
-            hash: prompt_id,
-            topic,
-            content: markdown,
-            added_on: /* @__PURE__ */ new Date()
-          });
-          if (tags && tags.length > 0) {
-            await Promise.all(
-              tags.map(async (tag) => {
-                await articlesTagsStore.add({
-                  tag_id: tag.id,
-                  article_id
-                });
-              })
-            );
-          }
-          await tx.done;
-        } catch (error) {
-          console.error("db.saveArticle threw an error: ", error);
-          throw error;
-        }
-      },
-      async getArticlesByTagId(tag_id) {
-        try {
-          await _init();
-          const article_ids = await _db.getAllFromIndex("articles_tags", "tag_id", tag_id);
-          if (!article_ids || article_ids.length === 0) return [];
-          return await _db.getAllFromIndex("articles", "id", article_ids);
-        } catch (error) {
-          console.error("db.getArticlesByTagId threw an error: ", error);
-          throw error;
-        }
-      },
-      /**
-      * Async function to load the tags from IndexedDb.
-      *
-      * @returns {array} of id,value pairs
-      */
-      async getTags() {
-        try {
-          await _init();
-          return await _db.getAll("tags");
-        } catch (error) {
-          console.error("db.getTags threw an error: ", error);
-          throw error;
-        }
-      },
-      async saveTag(name) {
-        try {
-          await _init();
-          const tx = _db.transaction("tags", "readwrite");
-          const id = await tx.objectStore("tags").add({
-            name
-          });
-          await tx.done;
-          return { id, name };
-        } catch (error) {
-          console.error("db.saveTag threw an error: ", error);
-          throw error;
-        }
-      }
-    };
-  })();
-  var db_module_default = db;
-
   // src/sidebar.js
   var sidebar_module = (() => {
     const sidebar = document.createElement("div");
@@ -506,15 +517,17 @@ ${code}
     _load_tags().catch((err) => {
       console.error("Sidebar failed to load tags: ", err);
     });
-    const store_button = document.createElement("button");
-    store_button.textContent = "Store";
-    store_button.className = "big-button";
-    store_button.onclick = _saveArticles;
-    const reset_button = document.createElement("button");
-    reset_button.textContent = "Reset";
-    reset_button.className = "big-button";
-    reset_button.onclick = _clear_selections;
-    sidebar.append(store_button, reset_button);
+    const storage_tab_button = document.createElement("button");
+    storage_tab_button.textContent = "StorageTab";
+    storage_tab_button.className = "big-button";
+    storage_tab_button.onclick = () => browser.runtime.sendMessage({
+      action: "openStorageTab"
+    });
+    const settings_tab_button = document.createElement("button");
+    settings_tab_button.textContent = "Reset";
+    settings_tab_button.className = "big-button";
+    settings_tab_button.onclick = () => console.debug("To be implemented");
+    sidebar.append(storage_tab_button, settings_tab_button);
     const tags_input = document.createElement("input");
     tags_input.type = "text";
     tags_input.placeholder = "New tag";
@@ -532,7 +545,7 @@ ${code}
         if (ret) {
           const tag = _optionize_tag(ret);
           tags_available.appendChild(tag);
-          tags_cache.append(tag);
+          tags_cache.push(tag);
         }
         tags_input.value = "";
       } catch (error) {
@@ -563,6 +576,15 @@ ${code}
     tags_picked.className = "tag-list";
     tags_picked.multiple = true;
     sidebar.append(tags_picked);
+    const store_button = document.createElement("button");
+    store_button.textContent = "Store";
+    store_button.className = "big-button";
+    store_button.onclick = _saveArticles;
+    const reset_button = document.createElement("button");
+    reset_button.textContent = "Reset";
+    reset_button.className = "big-button";
+    reset_button.onclick = _clear_selections;
+    sidebar.append(store_button, reset_button);
     const separator = document.createElement("div");
     separator.innerHTML = `
             <div style="font-weight:bold; margin-bottom:8px;">
@@ -577,7 +599,9 @@ quicklinks
       const articles = _gather_checked_articles();
       console.debug("_saveArticles articles: ", articles);
       for (const { prompt_id, topic, prompt_text, answer_node } of articles) {
-        db_module_default.saveArticle(prompt_id, topic, prompt_text, answer_node, tags);
+        const markdown = markdown_converter_default.html_to_markdown(topic, prompt_text, answer_node);
+        console.debug("_saveArticles prompt_id: ", prompt_id, ", topic: ", topic, ", markdown: ", markdown, ", tags: ", tags);
+        db_module_default.saveArticle(prompt_id, topic, markdown, tags);
       }
       _clear_selections();
     }
@@ -774,6 +798,20 @@ quicklinks
       }
     }
   };
+
+  // src/background_comms.js
+  var background_comms = (() => {
+    browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      console.log("background_comms message: ", message);
+      console.log("background_comms sender: ", sender);
+      if (sender.id === browser.runtime.id) {
+        switch (message.type) {
+          case "GET_ALL_ARTICLES":
+            return db_module_default.getArticlesAll();
+        }
+      }
+    });
+  })();
 
   // src/main.js
   (async function() {

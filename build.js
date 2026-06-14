@@ -1,10 +1,11 @@
 const esbuild = require('esbuild');
 
+// TODO: minify these after dev
 Promise.all([
   esbuild.build({
     entryPoints: ['src/background_script.js'],
     bundle: true,
-    minify: true,
+    // minify: true,
     outfile: 'dist/background_script.js',
     format: 'iife',
     globalName: 'LLMNotesBackground',
@@ -12,6 +13,7 @@ Promise.all([
   esbuild.build({
     entryPoints: ['src/main.js'],
     bundle: true,
+    // minify: true,
     outfile: 'dist/bundle.js',
     format: 'iife',
     globalName: 'LLMNotes',
@@ -19,6 +21,7 @@ Promise.all([
   esbuild.build({
     entryPoints: ['src/storage_tab.js'],
     bundle: true,
+    // minify: true,
     outfile: 'dist/storage_tab.js',
     format: 'iife',
     globalName: 'LLMNotesStorage',

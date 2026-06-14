@@ -2,15 +2,16 @@ import db_module from "./db_module";
 
 const background_comms = (() => {
 
-  browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-    console.log('message: ', message);
-    console.log('sender: ', sender);
-    if (sender.id === browser.runtime.id && !sender.tab) {
+  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('background_comms message: ', message);
+    console.log('background_comms sender: ', sender);
+    if (sender.id === browser.runtime.id) {
       switch (message.type) {
         case 'GET_ALL_ARTICLES':
-          const response = await db_module.getArticlesAll();
-          sendResponse(response);
-          return true;
+          // const response = db_module.getArticlesAll();
+          return db_module.getArticlesAll();
+        // sendResponse(response);
+        // return true;
       }
     }
   });

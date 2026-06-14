@@ -1,25 +1,34 @@
-var LLMNotesBackground=(()=>{function o(e){return`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Settings</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        button { padding: 8px 16px; cursor: pointer; }
-      </style>
-    </head>
-    <body>
-      <h1>Settings</h1>
-      <p>Dark mode: <span id="darkmode-state">${e}</span></p>
-      <button id="toggle-darkmode">Toggle Dark Mode</button>
-      <script>
-        document.getElementById('toggle-darkmode').addEventListener('click', () => {
-          const newState = !(${e});
-          window.location.href = 'data:text/html,' + encodeURIComponent(
-            generateSettingsHTML(newState)
-          );
-        });
-      <\/script>
-    </body>
-    </html>
-  `}browser.runtime.onMessage.addListener((e,t,n)=>{if(e.action==="openSettingsTab"){let r=o(!0);browser.tabs.create({url:`data:text/html,${encodeURIComponent(r)}`,active:!0})}e.action==="openStorageTab"&&(console.debug("message: openStorageTab"),console.debug("sender: ",t),console.debug("sendResponse",n),browser.tabs.create({url:browser.runtime.getURL("dist/template/storage-tab.html?ext=llm-notes"),active:!0}))});})();
+var LLMNotesBackground = (() => {
+  // src/background_script.js
+  var settings_tab;
+  var storage_tab;
+  var sidebar_tab;
+  async function init_sidebar_tab() {
+    const tabs = await browser.tabs.query({ url: "https://chat.mistral.ai/*" });
+    if (tabs.length > 0) {
+      sidebar_tab = tabs[0];
+    } else {
+      console.error("No sidebar tab found!");
+    }
+  }
+  init_sidebar_tab();
+  async function _handle_sidebar_message(message, sendResponse) {
+    if (message.action === "openSettingsTab") {
+      settings_tab = await browser.tabs.create({
+        url: browser.runtime.getURL("dist/template/settings-tab.html?ext=llm-notes"),
+        active: true
+      });
+    } else if (message.action === "openStorageTab") {
+      storage_tab = await browser.tabs.create({
+        url: browser.runtime.getURL("dist/template/storage-tab.html?ext=llm-notes"),
+        active: true
+      });
+    }
+  }
+  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (sender.tab.id === sidebar_tab.id) {
+      _handle_sidebar_message(message, sendResponse);
+    } else if (sender.tab.id === storage_tab.id) {
+    }
+  });
+})();
