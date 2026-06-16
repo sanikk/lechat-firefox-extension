@@ -44,8 +44,8 @@ main.hidden {
   display: none !important;
 }
 
-#storage-window {
-  display: none;
+#popup-window {
+  display: block;
   position: absolute;
   top: 0;
   left: 0;
@@ -53,10 +53,6 @@ main.hidden {
   height: 100vh;
   background: white;
   z-index: 1000;
-}
-
-#storage-window:not(.hidden) {
-  display: block;
 }
 
 .tag-button {

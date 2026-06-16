@@ -11,9 +11,12 @@ import db_module from './db_module.js'
 import storage_module from './storage_window.js';
 import markdown_converter from './markdown_converter.js';
 
+// TODO: mabbe remove settings totally?
 
 const sidebar_module = (() => {
-	const storage_window = storage_module.getWindow();
+	var storage_window;
+	const main_content = document.querySelector('main');
+
 	const sidebar = document.createElement('div');
 	sidebar.id = 'tm-jump-sidebar';
 	const prompt_list = document.createElement('div');
@@ -25,22 +28,22 @@ const sidebar_module = (() => {
 		console.error('Sidebar failed to load tags: ', err);
 	})
 
-	const storage_tab_button = document.createElement('button');
-	storage_tab_button.textContent = 'StorageTab';
-	storage_tab_button.className = 'big-button';
-	storage_tab_button.onclick = () => {
-		document.querySelector('main').classList.toggle('hidden');
-		storage_window.classList.toggle('hidden');
+	const storage_button = document.createElement('button');
+	storage_button.textContent = 'StorageTab';
+	storage_button.className = 'big-button';
+	storage_button.onclick = () => {
+		if (storage_window) {
+			document.body.removeChild(storage_window);
+			storage_window = null;
+			main_content.classList.remove('hidden');
+		} else {
+			storage_window = storage_module.getWindow();
+			document.body.appendChild(storage_window);
+			main_content.classList.add('hidden');
+		}
 	};
-	// browser.runtime.sendMessage({
-	// 	action: 'openStorageTab',
-	// });
-	const settings_tab_button = document.createElement('button');
-	settings_tab_button.textContent = 'Reset';
-	settings_tab_button.className = 'big-button';
-	settings_tab_button.onclick = () => console.debug('To be implemented');
 
-	sidebar.append(storage_tab_button, settings_tab_button);
+	sidebar.append(storage_button);
 
 	const tags_input = document.createElement('input');
 	tags_input.type = 'text';
@@ -109,9 +112,9 @@ const sidebar_module = (() => {
 
 	const separator = document.createElement('div');
 	separator.innerHTML = `
-            <div style="font-weight:bold; margin-bottom:8px;">
-                Prompt\nquicklinks
-            </div>`;
+	    <div style="font-weight:bold; margin-bottom:8px;">
+		Prompt\nquicklinks
+	    </div>`;
 	sidebar.appendChild(separator);
 	sidebar.appendChild(prompt_list);
 

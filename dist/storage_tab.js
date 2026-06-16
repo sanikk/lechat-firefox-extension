@@ -216,12 +216,13 @@ var LLMNotesStorage = (() => {
   var selectAllCheckbox = document.getElementById("select-all");
   var selectedIds = /* @__PURE__ */ new Set();
   var sidebar_tab;
-  async function init_sidebar_tab() {
+  async function _init_sidebar_tab() {
     const tabs = await browser.tabs.query({ url: "https://chat.mistral.ai/*" });
     if (tabs.length > 0) {
       sidebar_tab = tabs[0].id;
     } else {
       console.error("storage_tab.init_sidebar_tab: No sidebar tab found!");
+      throw new Error("No sidebar tab found!");
     }
   }
   async function _load_articles() {
@@ -230,7 +231,6 @@ var LLMNotesStorage = (() => {
       const response = await browser.tabs.sendMessage(sidebar_tab, {
         type: "GET_ALL_ARTICLES"
       });
-      console.log("response: ", response);
       return response;
     } catch (error) {
       console.error("_load_articles error: ", error);
@@ -239,7 +239,7 @@ var LLMNotesStorage = (() => {
   }
   async function _init() {
     try {
-      await init_sidebar_tab();
+      await _init_sidebar_tab();
       const articles = await _load_articles();
       for (const article of articles) {
         _render_article(article);
@@ -250,9 +250,6 @@ var LLMNotesStorage = (() => {
   }
   _init();
   async function _render_article({ hash, topic, content }) {
-    console.debug("hash: ", hash);
-    console.debug("topic: ", topic);
-    console.debug("content: ", content);
     const article_item = document.createElement("div");
     article_item.className = "article";
     article_item.title = content;

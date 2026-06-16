@@ -22,7 +22,7 @@ const db = (() => {
   // });
 
   async function _openDB() {
-    _db = await openDB('LLMNotesDB', 2, {
+    _db = await openDB('LLMNotesDB', 3, {
       upgrade(db) {
         const tagsStore = db.createObjectStore('tags', { keyPath: 'id', autoIncrement: true });
         tagsStore.createIndex('name', 'name', { unique: true });
@@ -33,6 +33,7 @@ const db = (() => {
           autoIncrement: true,
         });
         articlesStore.createIndex('topic', 'topic', { unique: false });
+        articlesStore.createIndex('added_on', 'added_on', { unique: false });
         // Article (id: int, hash: str, topic: str, content: str, added_on: date) 
 
         const articlesTagsStore = db.createObjectStore('articles_tags', { keyPath: ['article_id', 'tag_id'] });
@@ -123,6 +124,29 @@ const db = (() => {
       //    console.error('db.getArticlesAll threw an error: ', error);
       //    throw error;
       //  }
+    },
+
+    async getArticlesLatest(amount = 20) {
+      try {
+        await _init();
+        const returnable = [];
+        const tx = _db.transaction('articles', 'readonly');
+        const store = tx.objectStore('articles');
+        const index = store.index('added_on');
+        var i = 0;
+        index.openCursor().onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor && i < amount) {
+            const entry = document.createElement('div');
+
+            returnable.push(entry);
+          }
+        }
+
+      } catch (error) {
+        console.error('db.getArticlesLatest threw an error: ', error);
+        throw error;
+      }
     },
 
     async getArticlesByTagId(tag_id) {
